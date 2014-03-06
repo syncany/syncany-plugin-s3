@@ -1,0 +1,2 @@
+syncany-plugin-rest
+===================
