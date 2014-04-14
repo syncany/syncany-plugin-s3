@@ -1,11 +1,41 @@
+evaluationDependsOn(':syncany')
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
+
+configurations {
+	pluginjar
+}
+
+project.ext {
+	pluginId = "rest"
+	pluginName = "REST"
+	pluginVersion = "0.1.0"	
+	
+	pluginVersionSnapshot = project(':syncany').ext.applicationVersionSnapshot
+	pluginVersionFull = "${pluginVersion}${pluginVersionSnapshot}"	
+}
+
+dependencies {
+	compile		project(':syncany')
+	compile		project(':syncany-lib')
+	compile		"net.java.dev.jets3t:jets3t:0.9.0"   
+
+	pluginjar	"net.java.dev.jets3t:jets3t:0.9.0"   
+		
+	testCompile	"junit:junit:4.3"
+	testCompile	project(path: ':syncany-lib', configuration: 'tests')
+}
 
 repositories {
 	mavenCentral()
 }
 
-dependencies {
-    compile			project(':syncany-lib')
-	compile			"net.java.dev.jets3t:jets3t:0.9.0"          
+task pluginJar(type: Jar, dependsOn: compileJava) {
+	from files(sourceSets.main.output.classesDir)
+	from files(sourceSets.main.output.resourcesDir)
+	from { configurations.pluginjar.collect { zipTree(it) } }
+
+	baseName = "syncany-plugin-${pluginId}"
+	version  = "${pluginVersionFull}"						
 }
