@@ -27,10 +27,6 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.jets3t.service.ServiceException;
-import org.jets3t.service.StorageService;
-import org.jets3t.service.acl.CanonicalGrantee;
-import org.jets3t.service.acl.GranteeInterface;
-import org.jets3t.service.acl.Permission;
 import org.jets3t.service.impl.rest.httpclient.RestStorageService;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
@@ -38,6 +34,7 @@ import org.syncany.connection.plugins.AbstractTransferManager;
 import org.syncany.connection.plugins.DatabaseRemoteFile;
 import org.syncany.connection.plugins.MultiChunkRemoteFile;
 import org.syncany.connection.plugins.RemoteFile;
+import org.syncany.connection.plugins.RepoRemoteFile;
 import org.syncany.connection.plugins.StorageException;
 import org.syncany.connection.plugins.TransferManager;
 
@@ -257,32 +254,51 @@ public abstract class RestTransferManager extends AbstractTransferManager {
 	}
 	
 	@Override
-	// TODO [high] This code is untested!
 	public boolean repoHasWriteAccess() throws StorageException {
-		GranteeInterface grantee = new CanonicalGrantee(bucket.getOwner().getId());
-		return bucket.getAcl().hasGranteeAndPermission(grantee, Permission.PERMISSION_WRITE);
+		try {
+			logger.log(Level.INFO, "Testing write permissions by uploading empty test file ...");
+
+			File tempFile = createTempFile("test-write-permission");
+			RepoRemoteFile tempRepoRemoteFile = new RepoRemoteFile();
+			
+			upload(tempFile, tempRepoRemoteFile);
+			delete(tempRepoRemoteFile);
+			
+			logger.log(Level.INFO, "-> Success. Repo has write access.");			
+			return true;
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot check write status for bucket.", e);
+			return false;
+		}		
 	}
 
 	@Override
-	// TODO [high] This code is untested!
 	public boolean repoExists() throws StorageException {
-		try {
-			int status = service.checkBucketStatus(bucket.getName());
-			return (status != StorageService.BUCKET_STATUS__DOES_NOT_EXIST);
-		}
-		catch (ServiceException e) {
-			throw new StorageException(e);
-		}
+		boolean repoExists = repoIsValid(); // This is odd, but it works!
+		
+		logger.log(Level.INFO, "-> Repo exists? " + repoExists);
+		return repoExists;
 	}
 	
 	@Override
-	// TODO [high] This code is untested!
 	public boolean repoIsValid() throws StorageException {
-		try {
-			return service.listObjects(bucket.getName()).length != 0;
+		Map<String, RepoRemoteFile> repoFileList = list(RepoRemoteFile.class);
+		
+		if (repoFileList.size() == 1) {
+			logger.log(Level.INFO, "-> Repo is valid. One repo file found.");
+			return true;			
 		}
-		catch (ServiceException e) {
-			throw new StorageException(e);
-		}
+		else {
+			logger.log(Level.INFO, "-> Repo is NOT valid. Number of repo files: " + repoFileList.size());
+			
+			if (logger.isLoggable(Level.FINE)) {
+				for (RepoRemoteFile repoFile : repoFileList.values()) {
+					logger.log(Level.FINE, "- " + repoFile);
+				}
+			}
+			
+			return false;						
+		} 
 	}
 }
