@@ -40,7 +40,6 @@ import org.syncany.connection.plugins.MultiChunkRemoteFile;
 import org.syncany.connection.plugins.RemoteFile;
 import org.syncany.connection.plugins.StorageException;
 import org.syncany.connection.plugins.TransferManager;
-import org.syncany.util.FileUtil;
 
 /**
  * The REST transfer manager implements a {@link TransferManager} based on 
@@ -141,7 +140,7 @@ public abstract class RestTransferManager extends AbstractTransferManager {
 
 			logger.log(Level.FINE, "- Downloading from bucket " + bucket.getName() + ": " + fileObj + " ...");
 			tempFile = createTempFile(remoteFile.getName());
-			FileUtil.writeToFile(fileObjInputStream, tempFile);
+			FileUtils.copyInputStreamToFile(fileObjInputStream, tempFile);
 
 			fileObjInputStream.close();
 
@@ -259,7 +258,7 @@ public abstract class RestTransferManager extends AbstractTransferManager {
 	
 	@Override
 	// TODO [high] This code is untested!
-	public boolean hasWriteAccess() throws StorageException {
+	public boolean repoHasWriteAccess() throws StorageException {
 		GranteeInterface grantee = new CanonicalGrantee(bucket.getOwner().getId());
 		return bucket.getAcl().hasGranteeAndPermission(grantee, Permission.PERMISSION_WRITE);
 	}
@@ -278,9 +277,9 @@ public abstract class RestTransferManager extends AbstractTransferManager {
 	
 	@Override
 	// TODO [high] This code is untested!
-	public boolean repoIsEmpty() throws StorageException {
+	public boolean repoIsValid() throws StorageException {
 		try {
-			return service.listObjects(bucket.getName()).length == 0;
+			return service.listObjects(bucket.getName()).length != 0;
 		}
 		catch (ServiceException e) {
 			throw new StorageException(e);

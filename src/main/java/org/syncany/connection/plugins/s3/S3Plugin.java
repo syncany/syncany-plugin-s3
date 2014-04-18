@@ -25,23 +25,10 @@ import org.syncany.connection.plugins.Plugin;
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
 public class S3Plugin extends Plugin {
-    public static final String ID = "s3";
-    
-    @Override
-    public String getId() {
-        return ID;
-    }    
-
-    @Override
-    public String getName() {
-        return "Amazon S3";
+    public S3Plugin() {
+    	super("s3");
     }
-
-    @Override
-    public Integer[] getVersion() {
-        return new Integer[] { 0, 1 };
-    }
-
+	
     @Override
     public Connection createConnection() {
         return new S3Connection();

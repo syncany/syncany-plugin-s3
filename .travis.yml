@@ -1,0 +1,30 @@
+language: java
+jdk: openjdk7
+
+env:
+  global:
+  - TERM=dumb
+  - secure: "ZwMSKZPKmTBvBRsgDU1uLDxsw570sSbgI+R7boSJKFtPvGvH0sbC/9UnPlUCuN56k/Wvb1ThquHxJoiXN23+2fZwKEus+o3C+6z5MbpRBDGbhlyJSzQ4Rd+qWwTutCR0I58CndwQt7H1wLkYIgPLyizWTGm1YHinOhpEax6aQUU="
+  - secure: "htDgSzs4AefCoOb7fH28L3krAWrEJnxWoa32yzgKJwWXXdwY987Rm0RmfoTyToYDvQ8aNlA8HYd2hTYZaxybkWwI+nTKJHEptaBhjI1QPIUbZFeMo8OGeetmFQgl2Fsz9+p9A8vOtWlFkZEJRPnSOGKFmB7FlVYLDzuiCJUL0yQ="
+  - secure: "V4qsrsCUMk5OPYg1uDfO32+wYSG6dBGOFHXtbpW5rppnMBv/wM/NuLYIewtcOkUp1lHMTTX8OgWRD0+5vuwMfzZ7TtVe8d3hrY2Yt54Ra3lgAM4VTxlQs6UMnyLPype2W9MF4QxfVVHIPNXf0QoSV9FMUDpumEHdCyxOcXA7NRs="
+
+branches:
+  only:
+  - master
+  - develop
+
+notifications:
+  email: false
+  irc: chat.freenode.net#syncany
+
+before_install:
+- sudo apt-get update
+- sudo apt-get install -y -q lftp
+- lftp -v
+
+script:
+- core/gradlew clean pluginJar
+
+after_success:
+- core/gradle/lftp/lftpuploadplugin.sh
+

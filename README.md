@@ -1,12 +1,6 @@
-Syncany Rest Plugin
+Syncany REST Plugin
+-------------------
+This plugin uses an **Amazon S3 bucket** as a storage backend for [Syncany](http://www.syncany.org). The plugin can be installed in Syncany using the `sy plugin install` command. For further information about the usage, please refer to the central **[wiki page](https://github.com/binwiederhier/syncany/wiki)**.
 
-#1 Steps to make it work
-
-	git clone http://github.com/vwiencek/syncany-rest-sftp.git
-	cd syncany-plugin-hazelcast
-	git submodule init
-	git submodule update
-	gradle eclipse
-	
-Then you have a fully 'eclipse-prepared' environment to start improving the plugin
+For plugin development, please refer to the [plugin development wiki page](https://github.com/binwiederhier/syncany/wiki/Plugin-development).
 	

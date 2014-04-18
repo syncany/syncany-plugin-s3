@@ -9,15 +9,17 @@ configurations {
 
 project.ext {
 	pluginId = "rest"
-	pluginName = "REST"
-	pluginVersion = "0.1.0"	
+	pluginName = "Amazon S3 & Google Storage"
+	pluginVersion = "0.1.0-alpha"	
+	pluginDate = new Date()
+	pluginAppMinVersion = "0.1.2-alpha-SNAPSHOT+1404172035gitcf60fa8"
+	pluginRelease = project(':syncany').ext.applicationRelease	
 	
 	pluginVersionSnapshot = project(':syncany').ext.applicationVersionSnapshot
 	pluginVersionFull = "${pluginVersion}${pluginVersionSnapshot}"	
 }
 
 dependencies {
-	compile		project(':syncany')
 	compile		project(':syncany-lib')
 	compile		"net.java.dev.jets3t:jets3t:0.9.0"   
 
@@ -31,11 +33,29 @@ repositories {
 	mavenCentral()
 }
 
-task pluginJar(type: Jar, dependsOn: compileJava) {
+processResources {	
+	filter{ String line -> line.replaceAll('%pluginId%', "${pluginId}") }        	            
+	filter{ String line -> line.replaceAll('%pluginName%', "${pluginName}") }        	            
+	filter{ String line -> line.replaceAll('%pluginVersion%', "${pluginVersionFull}") }      	            
+	filter{ String line -> line.replaceAll('%pluginDate%', "${pluginDate}") }    	
+	filter{ String line -> line.replaceAll('%pluginAppMinVersion%', "${pluginAppMinVersion}") }    	
+	filter{ String line -> line.replaceAll('%pluginRelease%', "${pluginRelease}") }    	
+}		
+
+task pluginJar(type: Jar, dependsOn: [processResources, compileJava]) {
 	from files(sourceSets.main.output.classesDir)
 	from files(sourceSets.main.output.resourcesDir)
 	from { configurations.pluginjar.collect { zipTree(it) } }
 
 	baseName = "syncany-plugin-${pluginId}"
-	version  = "${pluginVersionFull}"						
+	version  = "${pluginVersionFull}"
+	
+	manifest {
+		attributes("Plugin-Id": "${pluginId}")
+		attributes("Plugin-Name": "${pluginName}")
+		attributes("Plugin-Version": "${pluginVersionFull}")
+		attributes("Plugin-Date": "${pluginDate}")		
+		attributes("Plugin-App-Min-Version": "${pluginAppMinVersion}")		
+		attributes("Plugin-Release": "${pluginRelease}")		
+	}						
 }
