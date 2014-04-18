@@ -9,7 +9,7 @@ configurations {
 
 project.ext {
 	pluginId = "rest"
-	pluginName = "Amazon S3 and Google Storage"
+	pluginName = "Amazon S3"
 	pluginVersion = "0.1.0"	
 	pluginDate = new Date()
 	pluginAppMinVersion = "0.1.2-alpha"
