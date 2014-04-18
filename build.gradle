@@ -12,7 +12,7 @@ project.ext {
 	pluginName = "Amazon S3 & Google Storage"
 	pluginVersion = "0.1.0-alpha"	
 	pluginDate = new Date()
-	pluginAppMinVersion = "0.1.2-alpha-SNAPSHOT+1404172035gitcf60fa8"
+	pluginAppMinVersion = "0.1.2-alpha"
 	pluginRelease = project(':syncany').ext.applicationRelease	
 	
 	pluginVersionSnapshot = project(':syncany').ext.applicationVersionSnapshot
