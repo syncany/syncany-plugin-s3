@@ -37,7 +37,7 @@ boolean isApplicationRelease() {
 // Global Settings /////////////////////////////////////////////////////////////
 
 project.ext {
-	applicationVersion = "0.1.1-alpha"
+	applicationVersion = "0.1.2-alpha"
 
 	applicationRelease = isApplicationRelease()
 	applicationDate = new Date()
@@ -122,6 +122,14 @@ subprojects {
 			resources { srcDir 'src/test/resources'}
 		}
 	}
+	
+	processResources {	
+		filter{ String line -> line.replaceAll('%applicationRelease%', "${applicationRelease}") }        	            
+		filter{ String line -> line.replaceAll('%applicationVersion%', "${applicationVersion}") }        	            
+		filter{ String line -> line.replaceAll('%applicationVersionFull%', "${applicationVersionFull}") }        	            
+		filter{ String line -> line.replaceAll('%applicationRevision%', "${applicationRevision}") }
+		filter{ String line -> line.replaceAll('%applicationDate%', "${applicationDate}") }          	            
+	}		
 	
 	task testAllLong(type: Test, dependsOn: testClasses, group: 'Verification') {
 		description = "Test long running scenarios"
