@@ -19,6 +19,7 @@ package org.syncany.connection.plugins.s3;
 
 import java.util.Map;
 
+import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
 import org.syncany.connection.plugins.Connection;
@@ -52,8 +53,13 @@ public class S3Connection implements Connection {
 			new PluginOptionSpec("accessKey", "Access Key", ValueType.STRING, true, false, null),
 			new PluginOptionSpec("secretKey", "Secret Key", ValueType.STRING, true, true, null),
 			new PluginOptionSpec("bucket", "Bucket Name", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("location", "Location", ValueType.STRING, true, false, null)
+			new PluginOptionSpec("location", "Location", ValueType.STRING, false, false, S3Bucket.LOCATION_US_WEST)
 		);
+	}
+	
+	@Override
+	public TransferManager createTransferManager() {
+		return new S3TransferManager(this);
 	}
 
 	public String getAccessKey() {
@@ -86,11 +92,6 @@ public class S3Connection implements Connection {
 		}
 
 		return credentials;
-	}
-
-	@Override
-	public TransferManager createTransferManager() {
-		return new S3TransferManager(this);
 	}
 
 	public String getLocation() {
