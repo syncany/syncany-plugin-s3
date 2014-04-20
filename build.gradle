@@ -8,7 +8,7 @@ configurations {
 }
 
 project.ext {
-	pluginId = "rest"
+	pluginId = "s3"
 	pluginName = "Amazon S3"
 	pluginVersion = "0.1.0"	
 	pluginDate = new Date()
