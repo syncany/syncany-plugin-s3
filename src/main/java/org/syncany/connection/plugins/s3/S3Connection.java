@@ -21,46 +21,83 @@ import java.util.Map;
 
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
+import org.syncany.connection.plugins.Connection;
 import org.syncany.connection.plugins.PluginOptionSpec;
 import org.syncany.connection.plugins.PluginOptionSpec.ValueType;
 import org.syncany.connection.plugins.PluginOptionSpecs;
 import org.syncany.connection.plugins.StorageException;
 import org.syncany.connection.plugins.TransferManager;
-import org.syncany.connection.plugins.rest.RestConnection;
 
-public class S3Connection extends RestConnection {   
-    // cp. http://jets3t.s3.amazonaws.com/api/constant-values.html#org.jets3t.service.model.S3Bucket.LOCATION_ASIA_PACIFIC
-    private String location;
+public class S3Connection implements Connection {
+	private String accessKey;
+	private String secretKey;
+	private String bucket;
+	private String location; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
 
-    @Override
+	private ProviderCredentials credentials;
+
+	@Override
 	public void init(Map<String, String> optionValues) throws StorageException {
-    	super.init(optionValues);    	
+		getOptionSpecs().validate(optionValues);
+		
+		accessKey = optionValues.get("accessKey");
+		secretKey = optionValues.get("secretKey");
+		bucket = optionValues.get("bucket");
 		location = optionValues.get("location");
 	}
 
-    @Override
-    public TransferManager createTransferManager() {
-        return new S3TransferManager(this);
-    }
+	@Override
+	public PluginOptionSpecs getOptionSpecs() {
+		return new PluginOptionSpecs(
+			new PluginOptionSpec("accessKey", "Access Key", ValueType.STRING, true, false, null),
+			new PluginOptionSpec("secretKey", "Secret Key", ValueType.STRING, true, true, null),
+			new PluginOptionSpec("bucket", "Bucket Name", ValueType.STRING, true, false, null),
+			new PluginOptionSpec("location", "Location", ValueType.STRING, true, false, null)
+		);
+	}
 
-    @Override
-    protected ProviderCredentials createCredentials() {       
-        return new AWSCredentials(getAccessKey(), getSecretKey());
-    }    
+	public String getAccessKey() {
+		return accessKey;
+	}
 
-    public String getLocation() {
-        return location;
-    }
+	public String getBucket() {
+		return bucket;
+	}
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
-    
-    @Override
-    public PluginOptionSpecs getOptionSpecs() {
-    	PluginOptionSpecs optionSpecs = super.getOptionSpecs();    	
-    	optionSpecs.add(new PluginOptionSpec("location", "Location", ValueType.STRING, true, false, null));
+	public String getSecretKey() {
+		return secretKey;
+	}
 
-    	return optionSpecs;
-    }    
+	public void setAccessKey(String accessKey) {
+		this.accessKey = accessKey;
+	}
+
+	public void setBucket(String bucket) {
+		this.bucket = bucket;
+	}
+
+	public void setSecretKey(String secretKey) {
+		this.secretKey = secretKey;
+	}
+
+	public ProviderCredentials getCredentials() {
+		if (credentials == null) {
+			credentials = new AWSCredentials(getAccessKey(), getSecretKey());
+		}
+
+		return credentials;
+	}
+
+	@Override
+	public TransferManager createTransferManager() {
+		return new S3TransferManager(this);
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
 }

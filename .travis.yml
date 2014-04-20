@@ -5,7 +5,7 @@ env:
   global:
   - TERM=dumb
   - secure: "ZwMSKZPKmTBvBRsgDU1uLDxsw570sSbgI+R7boSJKFtPvGvH0sbC/9UnPlUCuN56k/Wvb1ThquHxJoiXN23+2fZwKEus+o3C+6z5MbpRBDGbhlyJSzQ4Rd+qWwTutCR0I58CndwQt7H1wLkYIgPLyizWTGm1YHinOhpEax6aQUU="
-  - secure: "htDgSzs4AefCoOb7fH28L3krAWrEJnxWoa32yzgKJwWXXdwY987Rm0RmfoTyToYDvQ8aNlA8HYd2hTYZaxybkWwI+nTKJHEptaBhjI1QPIUbZFeMo8OGeetmFQgl2Fsz9+p9A8vOtWlFkZEJRPnSOGKFmB7FlVYLDzuiCJUL0yQ="
+  - secure: "IQypDfzL4R4bC3KcqDx0zAh9CqEWvYO1pqAJ4ONaBhwtgQA5fgxVxmkUxBOszmFyTuXW7PpACLeukZmoArM9cLi4k0IbAQhBF8xtutaMopMFfdVFHj7u/7ri8KyR4D8ayr+qSYNhHvkW+Hh59gx6SG4vkUFcmvc4JlR0y5DjqXY="
   - secure: "V4qsrsCUMk5OPYg1uDfO32+wYSG6dBGOFHXtbpW5rppnMBv/wM/NuLYIewtcOkUp1lHMTTX8OgWRD0+5vuwMfzZ7TtVe8d3hrY2Yt54Ra3lgAM4VTxlQs6UMnyLPype2W9MF4QxfVVHIPNXf0QoSV9FMUDpumEHdCyxOcXA7NRs="
 
 branches:
