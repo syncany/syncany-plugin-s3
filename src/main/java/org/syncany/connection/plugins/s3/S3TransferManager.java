@@ -17,6 +17,7 @@
  */
 package org.syncany.connection.plugins.s3;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -256,12 +257,18 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testTargetCanWrite() {
 		try {
-			File tempFile = createTempFile("syncany-test-write");
-			RepoRemoteFile tempRepoRemoteFile = new RepoRemoteFile();
+			String tempRemoteFilePath = "syncany-test-write"; 
+
+			StorageObject tempFileObject = new StorageObject(tempRemoteFilePath);
+
+			tempFileObject.setContentType(APPLICATION_CONTENT_TYPE);
+			tempFileObject.setDataInputStream(new ByteArrayInputStream(new byte[] { 0x01, 0x02, 0x03 }));
+			tempFileObject.setContentLength(3);
+
+			logger.log(Level.FINE, "- Uploading to bucket " + bucket.getName() + ": " + tempFileObject + " ...");
+			service.putObject(bucket.getName(), tempFileObject);
 			
-			upload(tempFile, tempRepoRemoteFile);
-			delete(tempRepoRemoteFile);
-			
+			service.deleteObject(bucket.getName(), tempRemoteFilePath);
 			logger.log(Level.INFO, "testTargetCanWrite: Success. Repo has write access.");			
 			return true;
 		}
