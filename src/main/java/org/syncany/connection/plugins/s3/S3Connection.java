@@ -27,9 +27,8 @@ import org.syncany.connection.plugins.PluginOptionSpec;
 import org.syncany.connection.plugins.PluginOptionSpec.ValueType;
 import org.syncany.connection.plugins.PluginOptionSpecs;
 import org.syncany.connection.plugins.StorageException;
-import org.syncany.connection.plugins.TransferManager;
 
-public class S3Connection implements Connection {
+public class S3Connection extends Connection {
 	private String accessKey;
 	private String secretKey;
 	private String bucket;
@@ -55,11 +54,6 @@ public class S3Connection implements Connection {
 			new PluginOptionSpec("bucket", "Bucket Name", ValueType.STRING, true, false, null),
 			new PluginOptionSpec("location", "Location", ValueType.STRING, false, false, S3Bucket.LOCATION_US_WEST)
 		);
-	}
-	
-	@Override
-	public TransferManager createTransferManager() {
-		return new S3TransferManager(this);
 	}
 
 	public String getAccessKey() {

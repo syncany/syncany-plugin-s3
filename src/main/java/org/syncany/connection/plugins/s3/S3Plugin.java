@@ -19,6 +19,7 @@ package org.syncany.connection.plugins.s3;
 
 import org.syncany.connection.plugins.Connection;
 import org.syncany.connection.plugins.Plugin;
+import org.syncany.connection.plugins.TransferManager;
 
 /**
  *
@@ -28,6 +29,11 @@ public class S3Plugin extends Plugin {
     public S3Plugin() {
     	super("s3");
     }
+
+	@Override
+	public TransferManager createTransferManager(Connection connection) {
+		return new S3TransferManager((S3Connection) connection);
+	}
 	
     @Override
     public Connection createConnection() {

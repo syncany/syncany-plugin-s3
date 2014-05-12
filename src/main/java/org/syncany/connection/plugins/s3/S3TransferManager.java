@@ -17,6 +17,7 @@
  */
 package org.syncany.connection.plugins.s3;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -33,6 +34,7 @@ import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
 import org.syncany.connection.plugins.AbstractTransferManager;
+import org.syncany.connection.plugins.ActionRemoteFile;
 import org.syncany.connection.plugins.DatabaseRemoteFile;
 import org.syncany.connection.plugins.MultiChunkRemoteFile;
 import org.syncany.connection.plugins.RemoteFile;
@@ -67,14 +69,16 @@ public class S3TransferManager extends AbstractTransferManager {
 	private RestStorageService service;
 	private StorageBucket bucket;
 
-	private String multichunkPath;
-	private String databasePath;
+	private String multichunksPath;
+	private String databasesPath;
+	private String actionsPath;
 
 	public S3TransferManager(S3Connection connection) {
 		super(connection);
 
-		this.multichunkPath = "multichunks";
-		this.databasePath = "databases";
+		this.multichunksPath = "multichunks";
+		this.databasesPath = "databases";
+		this.actionsPath = "actions";
 	}
 	
 	@Override
@@ -112,11 +116,14 @@ public class S3TransferManager extends AbstractTransferManager {
 				service.createBucket(bucket);
 			}
 			
-			StorageObject multichunkPathFolder = new StorageObject(multichunkPath + "/"); // Slash ('/') makes it a folder
+			StorageObject multichunkPathFolder = new StorageObject(multichunksPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), multichunkPathFolder);
 
-			StorageObject databasePathFolder = new StorageObject(databasePath + "/"); // Slash ('/') makes it a folder
+			StorageObject databasePathFolder = new StorageObject(databasesPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), databasePathFolder);
+			
+			StorageObject actionPathFolder = new StorageObject(actionsPath + "/"); // Slash ('/') makes it a folder
+			service.putObject(bucket.getName(), actionPathFolder);
 		}
 		catch (ServiceException e) {
 			throw new StorageException(e);
@@ -243,10 +250,13 @@ public class S3TransferManager extends AbstractTransferManager {
 
 	private String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
 		if (remoteFile.equals(MultiChunkRemoteFile.class)) {
-			return multichunkPath;
+			return multichunksPath;
 		}
 		else if (remoteFile.equals(DatabaseRemoteFile.class)) {
-			return databasePath;
+			return databasesPath;
+		}
+		else if (remoteFile.equals(ActionRemoteFile.class)) {
+			return actionsPath;
 		}
 		else {
 			return null;
@@ -256,12 +266,18 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testTargetCanWrite() {
 		try {
-			File tempFile = createTempFile("syncany-test-write");
-			RepoRemoteFile tempRepoRemoteFile = new RepoRemoteFile();
+			String tempRemoteFilePath = "syncany-test-write"; 
+
+			StorageObject tempFileObject = new StorageObject(tempRemoteFilePath);
+
+			tempFileObject.setContentType(APPLICATION_CONTENT_TYPE);
+			tempFileObject.setDataInputStream(new ByteArrayInputStream(new byte[] { 0x01, 0x02, 0x03 }));
+			tempFileObject.setContentLength(3);
+
+			logger.log(Level.FINE, "- Uploading to bucket " + bucket.getName() + ": " + tempFileObject + " ...");
+			service.putObject(bucket.getName(), tempFileObject);
 			
-			upload(tempFile, tempRepoRemoteFile);
-			delete(tempRepoRemoteFile);
-			
+			service.deleteObject(bucket.getName(), tempRemoteFilePath);
 			logger.log(Level.INFO, "testTargetCanWrite: Success. Repo has write access.");			
 			return true;
 		}
