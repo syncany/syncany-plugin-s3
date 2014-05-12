@@ -78,7 +78,7 @@ public class S3TransferManager extends AbstractTransferManager {
 
 		this.multichunksPath = "multichunks";
 		this.databasesPath = "databases";
-		this.databasesPath = "actions";
+		this.actionsPath = "actions";
 	}
 	
 	@Override
