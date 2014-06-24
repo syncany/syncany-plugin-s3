@@ -15,20 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.syncany.connection.plugins.s3;
+package org.syncany.plugins.s3;
 
 import java.util.Map;
 
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
-import org.syncany.connection.plugins.Connection;
-import org.syncany.connection.plugins.PluginOptionSpec;
-import org.syncany.connection.plugins.PluginOptionSpec.ValueType;
-import org.syncany.connection.plugins.PluginOptionSpecs;
-import org.syncany.connection.plugins.StorageException;
+import org.syncany.plugins.PluginOptionSpec;
+import org.syncany.plugins.PluginOptionSpec.ValueType;
+import org.syncany.plugins.PluginOptionSpecs;
+import org.syncany.plugins.StorageException;
+import org.syncany.plugins.transfer.TransferSettings;
 
-public class S3Connection extends Connection {
+public class S3TransferSettings extends TransferSettings {
 	private String accessKey;
 	private String secretKey;
 	private String bucket;

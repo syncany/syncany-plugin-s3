@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.syncany.connection.plugins.s3;
+package org.syncany.plugins.s3;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -33,14 +33,14 @@ import org.jets3t.service.impl.rest.httpclient.RestStorageService;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
-import org.syncany.connection.plugins.AbstractTransferManager;
-import org.syncany.connection.plugins.ActionRemoteFile;
-import org.syncany.connection.plugins.DatabaseRemoteFile;
-import org.syncany.connection.plugins.MultiChunkRemoteFile;
-import org.syncany.connection.plugins.RemoteFile;
-import org.syncany.connection.plugins.RepoRemoteFile;
-import org.syncany.connection.plugins.StorageException;
-import org.syncany.connection.plugins.TransferManager;
+import org.syncany.plugins.StorageException;
+import org.syncany.plugins.transfer.AbstractTransferManager;
+import org.syncany.plugins.transfer.TransferManager;
+import org.syncany.plugins.transfer.files.ActionRemoteFile;
+import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
+import org.syncany.plugins.transfer.files.MultiChunkRemoteFile;
+import org.syncany.plugins.transfer.files.RemoteFile;
+import org.syncany.plugins.transfer.files.RepoRemoteFile;
 
 /**
  * The REST transfer manager implements a {@link TransferManager} based on 
@@ -73,7 +73,7 @@ public class S3TransferManager extends AbstractTransferManager {
 	private String databasesPath;
 	private String actionsPath;
 
-	public S3TransferManager(S3Connection connection) {
+	public S3TransferManager(S3TransferSettings connection) {
 		super(connection);
 
 		this.multichunksPath = "multichunks";
@@ -82,8 +82,8 @@ public class S3TransferManager extends AbstractTransferManager {
 	}
 	
 	@Override
-	public S3Connection getConnection() {
-		return (S3Connection) super.getConnection();
+	public S3TransferSettings getConnection() {
+		return (S3TransferSettings) super.getConnection();
 	}
 
 	@Override

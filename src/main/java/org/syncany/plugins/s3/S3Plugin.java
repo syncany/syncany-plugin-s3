@@ -15,28 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.syncany.connection.plugins.s3;
+package org.syncany.plugins.s3;
 
-import org.syncany.connection.plugins.Connection;
-import org.syncany.connection.plugins.Plugin;
-import org.syncany.connection.plugins.TransferManager;
+import org.syncany.plugins.transfer.TransferManager;
+import org.syncany.plugins.transfer.TransferPlugin;
+import org.syncany.plugins.transfer.TransferSettings;
 
 /**
  *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
-public class S3Plugin extends Plugin {
+public class S3Plugin extends TransferPlugin {
     public S3Plugin() {
     	super("s3");
     }
 
 	@Override
-	public TransferManager createTransferManager(Connection connection) {
-		return new S3TransferManager((S3Connection) connection);
+	public TransferManager createTransferManager(TransferSettings connection) {
+		return new S3TransferManager((S3TransferSettings) connection);
 	}
 	
     @Override
-    public Connection createConnection() {
-        return new S3Connection();
+    public TransferSettings createSettings() {
+        return new S3TransferSettings();
     }
 }
