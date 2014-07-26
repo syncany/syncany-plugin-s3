@@ -20,9 +20,9 @@ project.ext {
 
 dependencies {
 	compile		project(':syncany-lib')
-	compile		"net.java.dev.jets3t:jets3t:0.9.0"   
+	compile		"net.java.dev.jets3t:jets3t:0.9.2"   
 
-	pluginjar	"net.java.dev.jets3t:jets3t:0.9.0"   
+	pluginjar	"net.java.dev.jets3t:jets3t:0.9.2"   
 		
 	testCompile	"junit:junit:4.3"
 	testCompile	project(path: ':syncany-lib', configuration: 'tests')

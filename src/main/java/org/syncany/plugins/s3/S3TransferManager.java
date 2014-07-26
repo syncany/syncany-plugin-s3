@@ -88,17 +88,12 @@ public class S3TransferManager extends AbstractTransferManager {
 
 	@Override
 	public void connect() throws StorageException {
-		try {
-			if (service == null) {
-				service = new RestS3Service(getConnection().getCredentials());
-			}
-
-			if (bucket == null) {
-				bucket = new S3Bucket(getConnection().getBucket(), getConnection().getLocation());
-			}
+		if (service == null) {
+			service = new RestS3Service(getConnection().getCredentials());
 		}
-		catch (ServiceException ex) {
-			throw new StorageException("Unable to connect to S3: " + ex.getMessage(), ex);
+
+		if (bucket == null) {
+			bucket = new S3Bucket(getConnection().getBucket(), getConnection().getLocation());
 		}
 	}
  
