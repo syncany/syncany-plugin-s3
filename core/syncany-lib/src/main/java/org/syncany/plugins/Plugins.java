@@ -26,6 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.reflections.Reflections;
+import org.syncany.util.StringUtil;
 
 /**
  * This class loads and manages all the {@link Plugin}s loaded in the classpath.
@@ -114,7 +115,9 @@ public class Plugins {
 		
 		for (Class<? extends Plugin> pluginClass : reflections.getSubTypesOf(Plugin.class)) {
 			boolean canInstantiate = !Modifier.isAbstract(pluginClass.getModifiers());
-			String candidatePluginId = pluginClass.getSimpleName().replace(Plugin.class.getSimpleName(), "").toLowerCase();
+			
+			String camelCaseCandidatePluginId = pluginClass.getSimpleName().replace(Plugin.class.getSimpleName(), "");
+			String candidatePluginId = StringUtil.toSnakeCase(camelCaseCandidatePluginId);
 			
 			if (canInstantiate && candidatePluginId.equals(pluginId)) {
 				try {
@@ -129,16 +132,11 @@ public class Plugins {
 	}
 
 	private static void loadPlugins() {
-		try {
-			System.out.println(Class.forName("org.syncany.plugins.s3.S3Plugin"));
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
 		for (Class<? extends Plugin> pluginClass : reflections.getSubTypesOf(Plugin.class)) {
-			System.out.println(pluginClass);
 			boolean canInstantiate = !Modifier.isAbstract(pluginClass.getModifiers());
-			String pluginId = pluginClass.getSimpleName().replace(Plugin.class.getSimpleName(), "").toLowerCase();
+			
+			String camelCasePluginId = pluginClass.getSimpleName().replace(Plugin.class.getSimpleName(), "");
+			String pluginId = StringUtil.toSnakeCase(camelCasePluginId);
 			
 			if (canInstantiate && !plugins.containsKey(pluginId)) {
 				try {
