@@ -17,6 +17,7 @@
  */
 package org.syncany.plugins.s3;
 
+import org.syncany.config.Config;
 import org.syncany.plugins.transfer.TransferManager;
 import org.syncany.plugins.transfer.TransferPlugin;
 import org.syncany.plugins.transfer.TransferSettings;
@@ -31,8 +32,8 @@ public class S3Plugin extends TransferPlugin {
     }
 
 	@Override
-	public TransferManager createTransferManager(TransferSettings connection) {
-		return new S3TransferManager((S3TransferSettings) connection);
+	public TransferManager createTransferManager(TransferSettings connection, Config config) {
+		return new S3TransferManager((S3TransferSettings) connection, config);
 	}
 	
     @Override

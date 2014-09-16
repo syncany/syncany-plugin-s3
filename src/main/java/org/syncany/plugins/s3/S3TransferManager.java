@@ -33,14 +33,18 @@ import org.jets3t.service.impl.rest.httpclient.RestStorageService;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
-import org.syncany.plugins.StorageException;
+import org.syncany.config.Config;
 import org.syncany.plugins.transfer.AbstractTransferManager;
+import org.syncany.plugins.transfer.StorageException;
+import org.syncany.plugins.transfer.StorageMoveException;
 import org.syncany.plugins.transfer.TransferManager;
 import org.syncany.plugins.transfer.files.ActionRemoteFile;
 import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
-import org.syncany.plugins.transfer.files.MultiChunkRemoteFile;
+import org.syncany.plugins.transfer.files.MultichunkRemoteFile;
 import org.syncany.plugins.transfer.files.RemoteFile;
-import org.syncany.plugins.transfer.files.RepoRemoteFile;
+import org.syncany.plugins.transfer.files.SyncanyRemoteFile;
+import org.syncany.plugins.transfer.files.TempRemoteFile;
+import org.syncany.plugins.transfer.files.TransactionRemoteFile;
 
 /**
  * The REST transfer manager implements a {@link TransferManager} based on 
@@ -72,28 +76,32 @@ public class S3TransferManager extends AbstractTransferManager {
 	private String multichunksPath;
 	private String databasesPath;
 	private String actionsPath;
+	private String transactionsPath;
+	private String tempPath;
 
-	public S3TransferManager(S3TransferSettings connection) {
-		super(connection);
+	public S3TransferManager(S3TransferSettings connection, Config config) {
+		super(connection, config);
 
 		this.multichunksPath = "multichunks";
 		this.databasesPath = "databases";
 		this.actionsPath = "actions";
+		this.transactionsPath = "transactions";
+		this.tempPath = "temp";
 	}
 	
 	@Override
-	public S3TransferSettings getConnection() {
-		return (S3TransferSettings) super.getConnection();
+	public S3TransferSettings getSettings() {
+		return (S3TransferSettings) super.getSettings();
 	}
 
 	@Override
 	public void connect() throws StorageException {
 		if (service == null) {
-			service = new RestS3Service(getConnection().getCredentials());
+			service = new RestS3Service(getSettings().getCredentials());
 		}
 
 		if (bucket == null) {
-			bucket = new S3Bucket(getConnection().getBucket(), getConnection().getLocation());
+			bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
 		}
 	}
  
@@ -119,9 +127,15 @@ public class S3TransferManager extends AbstractTransferManager {
 			
 			StorageObject actionPathFolder = new StorageObject(actionsPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), actionPathFolder);
+
+			StorageObject transactionsPathFolder = new StorageObject(transactionsPath + "/"); // Slash ('/') makes it a folder
+			service.putObject(bucket.getName(), transactionsPathFolder);
+
+			StorageObject tempPathFolder = new StorageObject(tempPath + "/"); // Slash ('/') makes it a folder
+			service.putObject(bucket.getName(), tempPathFolder);
 		}
 		catch (ServiceException e) {
-			throw new StorageException(e);
+			throw new StorageException("Cannot initialize S3 bucket.", e);
 		}
 	}
 
@@ -176,7 +190,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			service.putObject(bucket.getName(), fileObject);
 		}
 		catch (Exception ex) {
-			Logger.getLogger(S3TransferManager.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, "Cannot upload " + localFile + " to " + remotePath, ex);
 			throw new StorageException(ex);
 		}
 	}
@@ -192,9 +206,26 @@ public class S3TransferManager extends AbstractTransferManager {
 			return true;
 		}
 		catch (ServiceException ex) {
-			Logger.getLogger(S3TransferManager.class.getName()).log(Level.SEVERE, null, ex);
+			logger.log(Level.SEVERE, "Unable to delete remote file " + remotePath, ex);
 			throw new StorageException(ex);
 		}
+	}
+	
+	@Override
+	public void move(RemoteFile sourceFile, RemoteFile targetFile) throws StorageException {
+		connect();
+
+		String sourceRemotePath = getRemoteFile(sourceFile);
+		String targetRemotePath = getRemoteFile(targetFile);
+
+		try {
+			StorageObject targetObject = new StorageObject(targetRemotePath);			
+			service.renameObject(getSettings().getBucket(), sourceRemotePath, targetObject);
+		}
+		catch (ServiceException ex) {
+			logger.log(Level.SEVERE, "Cannot move " + sourceRemotePath + " to " + targetRemotePath, ex);
+			throw new StorageMoveException(ex);
+		}		
 	}
 
 	@Override
@@ -227,7 +258,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			return remoteFiles;
 		}
 		catch (ServiceException ex) {
-			logger.log(Level.SEVERE, "Unable to list FTP directory.", ex);
+			logger.log(Level.SEVERE, "Unable to list S3 bucket.", ex);
 			throw new StorageException(ex);
 		}
 	}
@@ -244,7 +275,7 @@ public class S3TransferManager extends AbstractTransferManager {
 	}
 
 	private String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
-		if (remoteFile.equals(MultiChunkRemoteFile.class)) {
+		if (remoteFile.equals(MultichunkRemoteFile.class)) {
 			return multichunksPath;
 		}
 		else if (remoteFile.equals(DatabaseRemoteFile.class)) {
@@ -252,6 +283,12 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 		else if (remoteFile.equals(ActionRemoteFile.class)) {
 			return actionsPath;
+		}
+		else if (remoteFile.equals(TransactionRemoteFile.class)) {
+			return transactionsPath;
+		}
+		else if (remoteFile.equals(TempRemoteFile.class)) {
+			return tempPath;
 		}
 		else {
 			return null;
@@ -324,7 +361,7 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testRepoFileExists() {
 		try {
-			String repoRemoteFile = getRemoteFile(new RepoRemoteFile());
+			String repoRemoteFile = getRemoteFile(new SyncanyRemoteFile());
 			StorageObject[] repoFiles = service.listObjects(bucket.getName(), repoRemoteFile, null);
 			
 			if (repoFiles != null && repoFiles.length == 1) {
@@ -340,5 +377,5 @@ public class S3TransferManager extends AbstractTransferManager {
 			logger.log(Level.INFO, "testRepoFileExists: Retrieving repo file list does not exit.", e);
 			return false;
 		}
-	}
+	}	
 }

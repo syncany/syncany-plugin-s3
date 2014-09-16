@@ -25,7 +25,7 @@ import org.jets3t.service.security.ProviderCredentials;
 import org.syncany.plugins.PluginOptionSpec;
 import org.syncany.plugins.PluginOptionSpec.ValueType;
 import org.syncany.plugins.PluginOptionSpecs;
-import org.syncany.plugins.StorageException;
+import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.TransferSettings;
 
 public class S3TransferSettings extends TransferSettings {
