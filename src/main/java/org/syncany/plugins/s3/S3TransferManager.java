@@ -98,6 +98,7 @@ public class S3TransferManager extends AbstractTransferManager {
 		String proxyPort = System.getProperty("https.proxyPort");
 		String proxyUser = System.getProperty("https.proxyUser");
 		String proxyPassword = System.getProperty("https.proxyPassword");
+		
 		if (proxyHost != null && proxyPort != null) {
 			jets3tProperties.setProperty("httpclient.proxy-autodetect", "false");
 			jets3tProperties.setProperty("httpclient.proxy-host", proxyHost);
