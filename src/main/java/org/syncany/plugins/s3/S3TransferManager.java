@@ -92,13 +92,13 @@ public class S3TransferManager extends AbstractTransferManager {
 		this.tempPath = "temp";
 
 		// jets3t uses https by default (see https://jets3t.s3.amazonaws.com/toolkit/configuration.html)
+		jets3tProperties = Jets3tProperties.getInstance(Constants.JETS3T_PROPERTIES_FILENAME);
+
 		String proxyHost = System.getProperty("https.proxyHost");
 		String proxyPort = System.getProperty("https.proxyPort");
 		String proxyUser = System.getProperty("https.proxyUser");
 		String proxyPassword = System.getProperty("https.proxyPassword");
 		if (proxyHost != null && proxyPort != null) {
-			jets3tProperties = Jets3tProperties.getInstance(Constants.JETS3T_PROPERTIES_FILENAME);
-
 			jets3tProperties.setProperty("httpclient.proxy-autodetect", "false");
 			jets3tProperties.setProperty("httpclient.proxy-host", proxyHost);
 			jets3tProperties.setProperty("httpclient.proxy-port", proxyPort);
