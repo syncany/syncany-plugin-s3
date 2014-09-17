@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.jets3t.service.Constants;
+import org.jets3t.service.Jets3tProperties;
 import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.impl.rest.httpclient.RestStorageService;
@@ -47,23 +49,23 @@ import org.syncany.plugins.transfer.files.TempRemoteFile;
 import org.syncany.plugins.transfer.files.TransactionRemoteFile;
 
 /**
- * The REST transfer manager implements a {@link TransferManager} based on 
- * a bucket-based storage such as Amazon S3 or Google Storage. It uses the 
+ * The REST transfer manager implements a {@link TransferManager} based on
+ * a bucket-based storage such as Amazon S3 or Google Storage. It uses the
  * Jets3t library's {@link RestStorageService}.
- * 
- * <p>Using a {@link RestConnection}, the transfer manager is configured and uses 
+ *
+ * <p>Using a {@link RestConnection}, the transfer manager is configured and uses
  * a {@link StorageBucket} to store the Syncany repository data. While repo and
  * master file are stored in the given folder, databases and multichunks are stored
  * in special sub-folders:
- * 
+ *
  * <ul>
  *   <li>The <tt>databases</tt> folder keeps all the {@link DatabaseRemoteFile}s</li>
  *   <li>The <tt>multichunks</tt> folder keeps the actual data within the {@link MultiChunkRemoteFile}s</li>
  * </ul>
  *
- * <p>Concrete implementations of this class must override the {@link #createBucket()} method and the 
- * {@link #createService()} method. 
- * 
+ * <p>Concrete implementations of this class must override the {@link #createBucket()} method and the
+ * {@link #createService()} method.
+ *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
 public class S3TransferManager extends AbstractTransferManager {
@@ -72,6 +74,7 @@ public class S3TransferManager extends AbstractTransferManager {
 
 	private RestStorageService service;
 	private StorageBucket bucket;
+	private Jets3tProperties jets3tProperties;
 
 	private String multichunksPath;
 	private String databasesPath;
@@ -87,8 +90,27 @@ public class S3TransferManager extends AbstractTransferManager {
 		this.actionsPath = "actions";
 		this.transactionsPath = "transactions";
 		this.tempPath = "temp";
+
+		// jets3t uses https by default (see https://jets3t.s3.amazonaws.com/toolkit/configuration.html)
+		String proxyHost = System.getProperty("https.proxyHost");
+		String proxyPort = System.getProperty("https.proxyPort");
+		String proxyUser = System.getProperty("https.proxyUser");
+		String proxyPassword = System.getProperty("https.proxyPassword");
+		if (proxyHost != null && proxyPort != null) {
+			jets3tProperties = Jets3tProperties.getInstance(Constants.JETS3T_PROPERTIES_FILENAME);
+
+			jets3tProperties.setProperty("httpclient.proxy-autodetect", "false");
+			jets3tProperties.setProperty("httpclient.proxy-host", proxyHost);
+			jets3tProperties.setProperty("httpclient.proxy-port", proxyPort);
+
+			if (proxyUser != null && proxyPassword != null) {
+				jets3tProperties.setProperty("httpclient.proxy-user", proxyUser);
+				jets3tProperties.setProperty("httpclient.proxy-password", proxyPassword);
+			}
+		}
+
 	}
-	
+
 	@Override
 	public S3TransferSettings getSettings() {
 		return (S3TransferSettings) super.getSettings();
@@ -97,14 +119,14 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public void connect() throws StorageException {
 		if (service == null) {
-			service = new RestS3Service(getSettings().getCredentials());
+			service = new RestS3Service(getSettings().getCredentials(), "syncany", null, jets3tProperties);
 		}
 
 		if (bucket == null) {
 			bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
 		}
 	}
- 
+
 	@Override
 	public void disconnect() throws StorageException {
 		// Nothing
@@ -118,13 +140,13 @@ public class S3TransferManager extends AbstractTransferManager {
 			if (!testTargetExists()) {
 				service.createBucket(bucket);
 			}
-			
+
 			StorageObject multichunkPathFolder = new StorageObject(multichunksPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), multichunkPathFolder);
 
 			StorageObject databasePathFolder = new StorageObject(databasesPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), databasePathFolder);
-			
+
 			StorageObject actionPathFolder = new StorageObject(actionsPath + "/"); // Slash ('/') makes it a folder
 			service.putObject(bucket.getName(), actionPathFolder);
 
@@ -210,7 +232,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			throw new StorageException(ex);
 		}
 	}
-	
+
 	@Override
 	public void move(RemoteFile sourceFile, RemoteFile targetFile) throws StorageException {
 		connect();
@@ -219,13 +241,13 @@ public class S3TransferManager extends AbstractTransferManager {
 		String targetRemotePath = getRemoteFile(targetFile);
 
 		try {
-			StorageObject targetObject = new StorageObject(targetRemotePath);			
+			StorageObject targetObject = new StorageObject(targetRemotePath);
 			service.renameObject(getSettings().getBucket(), sourceRemotePath, targetObject);
 		}
 		catch (ServiceException ex) {
 			logger.log(Level.SEVERE, "Cannot move " + sourceRemotePath + " to " + targetRemotePath, ex);
 			throw new StorageMoveException(ex);
-		}		
+		}
 	}
 
 	@Override
@@ -250,7 +272,8 @@ public class S3TransferManager extends AbstractTransferManager {
 						remoteFiles.put(simpleRemoteName, remoteFile);
 					}
 					catch (Exception e) {
-						logger.log(Level.INFO, "Cannot create instance of " + remoteFileClass.getSimpleName() + " for object " + simpleRemoteName + "; maybe invalid file name pattern. Ignoring file.");
+						logger.log(Level.INFO, "Cannot create instance of " + remoteFileClass.getSimpleName() + " for object " + simpleRemoteName
+								+ "; maybe invalid file name pattern. Ignoring file.");
 					}
 				}
 			}
@@ -298,7 +321,7 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testTargetCanWrite() {
 		try {
-			String tempRemoteFilePath = "syncany-test-write"; 
+			String tempRemoteFilePath = "syncany-test-write";
 
 			StorageObject tempFileObject = new StorageObject(tempRemoteFilePath);
 
@@ -308,15 +331,15 @@ public class S3TransferManager extends AbstractTransferManager {
 
 			logger.log(Level.FINE, "- Uploading to bucket " + bucket.getName() + ": " + tempFileObject + " ...");
 			service.putObject(bucket.getName(), tempFileObject);
-			
+
 			service.deleteObject(bucket.getName(), tempRemoteFilePath);
-			logger.log(Level.INFO, "testTargetCanWrite: Success. Repo has write access.");			
+			logger.log(Level.INFO, "testTargetCanWrite: Success. Repo has write access.");
 			return true;
 		}
 		catch (Exception e) {
 			logger.log(Level.INFO, "testTargetCanWrite: Cannot check write status for bucket.", e);
 			return false;
-		}		
+		}
 	}
 
 	@Override
@@ -347,7 +370,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			else {
 				service.createBucket(bucket);
 				service.deleteBucket(bucket);
-								
+
 				logger.log(Level.INFO, "testTargetCanCreate: Bucket created/deleted successfully.");
 				return true;
 			}
@@ -363,7 +386,7 @@ public class S3TransferManager extends AbstractTransferManager {
 		try {
 			String repoRemoteFile = getRemoteFile(new SyncanyRemoteFile());
 			StorageObject[] repoFiles = service.listObjects(bucket.getName(), repoRemoteFile, null);
-			
+
 			if (repoFiles != null && repoFiles.length == 1) {
 				logger.log(Level.INFO, "testRepoFileExists: Repo file exists.");
 				return true;
@@ -377,5 +400,5 @@ public class S3TransferManager extends AbstractTransferManager {
 			logger.log(Level.INFO, "testRepoFileExists: Retrieving repo file list does not exit.", e);
 			return false;
 		}
-	}	
+	}
 }
