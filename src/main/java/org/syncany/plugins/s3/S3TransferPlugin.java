@@ -17,27 +17,15 @@
  */
 package org.syncany.plugins.s3;
 
-import org.syncany.config.Config;
-import org.syncany.plugins.transfer.TransferManager;
 import org.syncany.plugins.transfer.TransferPlugin;
-import org.syncany.plugins.transfer.TransferSettings;
 
 /**
- *
+ * Amazon S3 plugin for Syncany.
+ * 
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
-public class S3Plugin extends TransferPlugin {
-    public S3Plugin() {
+public class S3TransferPlugin extends TransferPlugin {
+    public S3TransferPlugin() {
     	super("s3");
-    }
-
-	@Override
-	public TransferManager createTransferManager(TransferSettings connection, Config config) {
-		return new S3TransferManager((S3TransferSettings) connection, config);
-	}
-	
-    @Override
-    public TransferSettings createSettings() {
-        return new S3TransferSettings();
     }
 }
