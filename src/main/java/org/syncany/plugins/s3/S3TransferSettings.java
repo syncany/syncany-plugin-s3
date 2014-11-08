@@ -17,44 +17,33 @@
  */
 package org.syncany.plugins.s3;
 
-import java.util.Map;
-
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
-import org.syncany.plugins.PluginOptionSpec;
-import org.syncany.plugins.PluginOptionSpec.ValueType;
-import org.syncany.plugins.PluginOptionSpecs;
-import org.syncany.plugins.transfer.StorageException;
+import org.simpleframework.xml.Element;
+import org.syncany.plugins.transfer.Encrypted;
+import org.syncany.plugins.transfer.Setup;
 import org.syncany.plugins.transfer.TransferSettings;
 
 public class S3TransferSettings extends TransferSettings {
+	@Element(name = "accessKey", required = true)
+	@Setup(order = 1, description = "Access Key")
 	private String accessKey;
+
+	@Element(name = "secretKey", required = true)
+	@Setup(order = 2, sensitive = true, description = "Secret Key")
+	@Encrypted
 	private String secretKey;
+	
+	@Element(name = "bucket", required = true)
+	@Setup(order = 3, description = "Bucket")
 	private String bucket;
-	private String location; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
+	
+	@Element(name = "location", required = true)
+	@Setup(order = 4, description = "Location")
+	private String location = S3Bucket.LOCATION_US_WEST; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
 
 	private ProviderCredentials credentials;
-
-	@Override
-	public void init(Map<String, String> optionValues) throws StorageException {
-		getOptionSpecs().validate(optionValues);
-		
-		accessKey = optionValues.get("accessKey");
-		secretKey = optionValues.get("secretKey");
-		bucket = optionValues.get("bucket");
-		location = optionValues.get("location");
-	}
-
-	@Override
-	public PluginOptionSpecs getOptionSpecs() {
-		return new PluginOptionSpecs(
-			new PluginOptionSpec("accessKey", "Access Key", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("secretKey", "Secret Key", ValueType.STRING, true, true, null),
-			new PluginOptionSpec("bucket", "Bucket Name", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("location", "Location", ValueType.STRING, false, false, S3Bucket.LOCATION_US_WEST)
-		);
-	}
 
 	public String getAccessKey() {
 		return accessKey;

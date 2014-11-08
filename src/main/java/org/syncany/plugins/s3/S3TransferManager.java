@@ -112,9 +112,8 @@ public class S3TransferManager extends AbstractTransferManager {
 
 	}
 
-	@Override
 	public S3TransferSettings getSettings() {
-		return (S3TransferSettings) super.getSettings();
+		return (S3TransferSettings) settings;
 	}
 
 	@Override

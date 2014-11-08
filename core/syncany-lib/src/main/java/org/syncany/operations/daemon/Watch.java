@@ -15,29 +15,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.syncany.plugins.s3;
+package org.syncany.operations.daemon;
 
-import org.syncany.config.Config;
-import org.syncany.plugins.transfer.TransferManager;
-import org.syncany.plugins.transfer.TransferPlugin;
-import org.syncany.plugins.transfer.TransferSettings;
+import java.io.File;
 
-/**
- *
- * @author Philipp C. Heckel <philipp.heckel@gmail.com>
- */
-public class S3Plugin extends TransferPlugin {
-    public S3Plugin() {
-    	super("s3");
-    }
+import org.simpleframework.xml.Element;
 
-	@Override
-	public TransferManager createTransferManager(TransferSettings connection, Config config) {
-		return new S3TransferManager((S3TransferSettings) connection, config);
+public class Watch {
+	public enum SyncStatus {
+		IN_SYNC, SYNCING
 	}
 	
-    @Override
-    public TransferSettings createSettings() {
-        return new S3TransferSettings();
-    }
+	@Element(name = "folder", required = true)
+	private File folder;
+	
+	@Element(name = "status", required = true)
+	private SyncStatus status;
+
+	public Watch() {
+		// Nothing.
+	}
+	
+	public Watch(File folder, SyncStatus status) {
+		this.folder = folder;
+		this.status = status;
+	}
+
+	public File getFolder() {
+		return folder;
+	}
+
+	public SyncStatus getStatus() {
+		return status;
+	}
 }

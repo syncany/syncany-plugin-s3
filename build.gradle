@@ -8,10 +8,10 @@ configurations {
 project.ext {
 	pluginId = "s3"
 	pluginName = "Amazon S3"
-	pluginVersion = "0.1.12-alpha"	
+	pluginVersion = "0.2.0-alpha"	
 	pluginDebianVersion = "1"	
 	pluginDate = new Date()
-	pluginAppMinVersion = "0.1.12-alpha"
+	pluginAppMinVersion = "0.2.0-alpha"
 	pluginRelease = rootProject.ext.applicationRelease
 	pluginConflictsWith = ""
 	
@@ -21,14 +21,18 @@ project.ext {
 }
 
 dependencies {
-	compile		project(':syncany-lib')
-	compile		"net.java.dev.jets3t:jets3t:0.9.2"   
+	compile			project(':syncany-lib')
+	compile			"net.java.dev.jets3t:jets3t:0.9.2"   
 
-	pluginjar	"net.java.dev.jets3t:jets3t:0.9.2"   
-	pluginjar	"log4j:log4j:1.2.17" // For jets3t, see #162
+	pluginjar("net.java.dev.jets3t:jets3t:0.9.2") {
+		exclude		group: "org.bouncycastle"
+		exclude		group: "org.apache.httpcomponents"
+	}
+	
+	pluginjar		"log4j:log4j:1.2.17" // For jets3t, see #162
 		
-	testCompile	"junit:junit:4.3"
-	testCompile	project(path: ':syncany-lib', configuration: 'tests')
+	testCompile		"junit:junit:4.3"
+	testCompile		project(path: ':syncany-lib', configuration: 'tests')
 }
 
 apply from: 'core/gradle/gradle/plugins.jar.gradle'
