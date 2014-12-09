@@ -41,6 +41,7 @@ import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.StorageMoveException;
 import org.syncany.plugins.transfer.TransferManager;
 import org.syncany.plugins.transfer.files.ActionRemoteFile;
+import org.syncany.plugins.transfer.files.CleanupRemoteFile;
 import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
 import org.syncany.plugins.transfer.files.MultichunkRemoteFile;
 import org.syncany.plugins.transfer.files.RemoteFile;
@@ -109,7 +110,6 @@ public class S3TransferManager extends AbstractTransferManager {
 				jets3tProperties.setProperty("httpclient.proxy-password", proxyPassword);
 			}
 		}
-
 	}
 
 	public S3TransferSettings getSettings() {
@@ -301,7 +301,7 @@ public class S3TransferManager extends AbstractTransferManager {
 		if (remoteFile.equals(MultichunkRemoteFile.class)) {
 			return multichunksPath;
 		}
-		else if (remoteFile.equals(DatabaseRemoteFile.class)) {
+		else if (remoteFile.equals(DatabaseRemoteFile.class) || remoteFile.equals(CleanupRemoteFile.class)) {
 			return databasesPath;
 		}
 		else if (remoteFile.equals(ActionRemoteFile.class)) {
