@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,13 +34,17 @@ public class S3TransferSettings extends TransferSettings {
 	@Setup(order = 2, sensitive = true, description = "Secret Key")
 	@Encrypted
 	private String secretKey;
-	
+
 	@Element(name = "bucket", required = true)
 	@Setup(order = 3, description = "Bucket")
 	private String bucket;
-	
+
+	@Element(name = "endpoint", required = false)
+	@Setup(order = 4, description = "If you are not using amazon s3, enter the location of your endpoint")
+	private String endpoint;
+
 	@Element(name = "location", required = true)
-	@Setup(order = 4, description = "Location")
+	@Setup(order = 5, description = "Amazon s3 region (ignored if you are using an endpoint other than amazon s3)")
 	private String location = S3Bucket.LOCATION_US_WEST; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
 
 	private ProviderCredentials credentials;
@@ -57,18 +61,6 @@ public class S3TransferSettings extends TransferSettings {
 		return secretKey;
 	}
 
-	public void setAccessKey(String accessKey) {
-		this.accessKey = accessKey;
-	}
-
-	public void setBucket(String bucket) {
-		this.bucket = bucket;
-	}
-
-	public void setSecretKey(String secretKey) {
-		this.secretKey = secretKey;
-	}
-
 	public ProviderCredentials getCredentials() {
 		if (credentials == null) {
 			credentials = new AWSCredentials(getAccessKey(), getSecretKey());
@@ -81,7 +73,7 @@ public class S3TransferSettings extends TransferSettings {
 		return location;
 	}
 
-	public void setLocation(String location) {
-		this.location = location;
+	public String getEndpoint() {
+		return endpoint;
 	}
 }
