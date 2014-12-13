@@ -128,11 +128,11 @@ public class S3TransferManager extends AbstractTransferManager {
 
 		if (bucket == null) {
 			if (getSettings().getEndpoint() != null) {
-				logger.log(Level.INFO, "Using non standard endpoint, ignoring region.");
+				logger.log(Level.INFO, "Using non-standard endpoint, ignoring region.");
 				bucket = new S3Bucket(getSettings().getBucket());
 			}
 			else {
-				logger.log(Level.INFO, "Using amazon s3 endpoint, setting location.");
+				logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
 				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
 			}
 		}

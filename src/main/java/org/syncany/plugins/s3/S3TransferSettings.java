@@ -40,11 +40,11 @@ public class S3TransferSettings extends TransferSettings {
 	private String bucket;
 
 	@Element(name = "endpoint", required = false)
-	@Setup(order = 4, description = "If you are not using amazon s3, enter the location of your endpoint")
+	@Setup(order = 4, description = "Endpoint (non-standard S3-compatible backends only)")
 	private String endpoint;
 
 	@Element(name = "location", required = true)
-	@Setup(order = 5, description = "Amazon s3 region (ignored if you are using an endpoint other than amazon s3)")
+	@Setup(order = 5, description = "Amazon S3 Region/Location (ignored for if endpoint is set)")
 	private String location = S3Bucket.LOCATION_US_WEST; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
 
 	private ProviderCredentials credentials;
