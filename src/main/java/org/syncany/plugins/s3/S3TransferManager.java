@@ -99,7 +99,7 @@ public class S3TransferManager extends AbstractTransferManager {
 		String proxyPort = System.getProperty("https.proxyPort");
 		String proxyUser = System.getProperty("https.proxyUser");
 		String proxyPassword = System.getProperty("https.proxyPassword");
-		
+
 		if (proxyHost != null && proxyPort != null) {
 			jets3tProperties.setProperty("httpclient.proxy-autodetect", "false");
 			jets3tProperties.setProperty("httpclient.proxy-host", proxyHost);
@@ -109,6 +109,10 @@ public class S3TransferManager extends AbstractTransferManager {
 				jets3tProperties.setProperty("httpclient.proxy-user", proxyUser);
 				jets3tProperties.setProperty("httpclient.proxy-password", proxyPassword);
 			}
+		}
+
+		if (getSettings().getEndpoint() != null) {
+			jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
 		}
 	}
 
@@ -123,7 +127,14 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 
 		if (bucket == null) {
-			bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
+			if (getSettings().getEndpoint() != null) {
+				logger.log(Level.INFO, "Using non-standard endpoint, ignoring region.");
+				bucket = new S3Bucket(getSettings().getBucket());
+			}
+			else {
+				logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
+				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
+			}
 		}
 	}
 
