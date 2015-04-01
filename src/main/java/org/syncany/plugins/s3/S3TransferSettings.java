@@ -17,8 +17,10 @@
  */
 package org.syncany.plugins.s3;
 
+import org.jets3t.service.model.GSBucket;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.security.AWSCredentials;
+import org.jets3t.service.security.GSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
 import org.simpleframework.xml.Element;
 import org.syncany.plugins.transfer.Encrypted;
@@ -26,26 +28,30 @@ import org.syncany.plugins.transfer.Setup;
 import org.syncany.plugins.transfer.TransferSettings;
 
 public class S3TransferSettings extends TransferSettings {
+	@Element(name = "google", required = true)
+	@Setup(order = 1, description = "Use Google Cloud Storage API variant")
+	private boolean google = false;
+
 	@Element(name = "accessKey", required = true)
-	@Setup(order = 1, description = "Access Key")
+	@Setup(order = 2, description = "Access Key")
 	private String accessKey;
 
 	@Element(name = "secretKey", required = true)
-	@Setup(order = 2, sensitive = true, description = "Secret Key")
+	@Setup(order = 3, sensitive = true, description = "Secret Key")
 	@Encrypted
 	private String secretKey;
 
 	@Element(name = "bucket", required = true)
-	@Setup(order = 3, description = "Bucket")
+	@Setup(order = 4, description = "Bucket")
 	private String bucket;
 
 	@Element(name = "endpoint", required = false)
-	@Setup(order = 4, description = "Endpoint (non-standard S3-compatible backends only)")
+	@Setup(order = 5, description = "Endpoint (non-standard S3-compatible backends only)")
 	private String endpoint;
 
-	@Element(name = "location", required = true)
-	@Setup(order = 5, description = "Amazon S3 Region/Location (ignored for if endpoint is set)")
-	private String location = S3Bucket.LOCATION_US_WEST; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
+	@Element(name = "location", required = false)
+	@Setup(order = 6, description = "Region/Location (ignored if endpoint is set).")
+	private String location; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
 
 	private ProviderCredentials credentials;
 
@@ -61,15 +67,26 @@ public class S3TransferSettings extends TransferSettings {
 		return secretKey;
 	}
 
+	public boolean isGoogle(){
+		return google;
+	}
+
 	public ProviderCredentials getCredentials() {
 		if (credentials == null) {
-			credentials = new AWSCredentials(getAccessKey(), getSecretKey());
+			credentials = isGoogle() ?
+				new GSCredentials(getAccessKey(), getSecretKey()) :
+				new AWSCredentials(getAccessKey(), getSecretKey());
 		}
 
 		return credentials;
 	}
 
 	public String getLocation() {
+		if (location == null){
+			location = isGoogle() ?
+				GSBucket.LOCATION_US :
+				S3Bucket.LOCATION_US_WEST;
+		}
 		return location;
 	}
 

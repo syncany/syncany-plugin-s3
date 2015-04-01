@@ -31,7 +31,9 @@ import org.jets3t.service.Constants;
 import org.jets3t.service.Jets3tProperties;
 import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
+import org.jets3t.service.impl.rest.httpclient.GoogleStorageService;
 import org.jets3t.service.impl.rest.httpclient.RestStorageService;
+import org.jets3t.service.model.GSBucket;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
@@ -112,7 +114,11 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 
 		if (getSettings().getEndpoint() != null) {
-			jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
+			if (getSettings().isGoogle()){
+				jets3tProperties.setProperty("gsservice.gs-endpoint", getSettings().getEndpoint());
+			} else {
+				jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
+			}
 		}
 	}
 
@@ -123,17 +129,27 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public void connect() throws StorageException {
 		if (service == null) {
-			service = new RestS3Service(getSettings().getCredentials(), "syncany", null, jets3tProperties);
+			try {
+				service = getSettings().isGoogle() ?
+					new GoogleStorageService(getSettings().getCredentials(), "syncany", null, jets3tProperties) :
+					new RestS3Service(getSettings().getCredentials(), "syncany", null, jets3tProperties);
+			} catch (ServiceException e) {
+				throw new StorageException("Unable to connect using given settings.");
+			}
 		}
 
 		if (bucket == null) {
 			if (getSettings().getEndpoint() != null) {
 				logger.log(Level.INFO, "Using non-standard endpoint, ignoring region.");
-				bucket = new S3Bucket(getSettings().getBucket());
+				bucket = getSettings().isGoogle() ?
+					new GSBucket(getSettings().getBucket()) :
+					new S3Bucket(getSettings().getBucket());
 			}
 			else {
 				logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
-				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
+				bucket = getSettings().isGoogle() ?
+					new GSBucket(getSettings().getBucket(), getSettings().getLocation()) :
+					new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
 			}
 		}
 	}
@@ -168,7 +184,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			service.putObject(bucket.getName(), tempPathFolder);
 		}
 		catch (ServiceException e) {
-			throw new StorageException("Cannot initialize S3 bucket.", e);
+			throw new StorageException("Cannot initialize bucket.", e);
 		}
 	}
 
