@@ -133,7 +133,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			}
 			else {
 				logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
-				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
+				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation().getLocationId());
 			}
 		}
 	}

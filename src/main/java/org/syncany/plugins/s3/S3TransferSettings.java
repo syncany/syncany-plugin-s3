@@ -17,7 +17,6 @@
  */
 package org.syncany.plugins.s3;
 
-import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
 import org.simpleframework.xml.Element;
@@ -44,8 +43,8 @@ public class S3TransferSettings extends TransferSettings {
 	private String endpoint;
 
 	@Element(name = "location", required = true)
-	@Setup(order = 5, description = "Amazon S3 Region/Location (ignored for if endpoint is set)")
-	private String location = S3Bucket.LOCATION_US_WEST; // cf. http://jets3t.s3.amazonaws.com/api/constant-values.html
+	@Setup(order = 5, description = "Location (ignored for if endpoint is set)")
+	private Location location = Location.US_WEST;
 
 	private ProviderCredentials credentials;
 
@@ -69,7 +68,7 @@ public class S3TransferSettings extends TransferSettings {
 		return credentials;
 	}
 
-	public String getLocation() {
+	public Location getLocation() {
 		return location;
 	}
 
