@@ -84,7 +84,7 @@ public class S3TransferSettings extends TransferSettings {
 
 	@Validate
 	public void checkIfEndpointOrLocationIsSet() throws StorageException {
-		if (location == null || endpoint == null) {
+		if (location == null && endpoint == null) {
 			throw new StorageException("Either location or endpoint have to be set");
 		}
 	}
