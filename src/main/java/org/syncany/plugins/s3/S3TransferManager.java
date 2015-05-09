@@ -339,7 +339,8 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 	}
 
-	private String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
+	@Override
+	public String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
 		if (remoteFile.equals(MultichunkRemoteFile.class)) {
 			return multichunksPath;
 		}
