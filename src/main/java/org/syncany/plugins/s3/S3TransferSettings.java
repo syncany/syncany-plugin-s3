@@ -20,10 +20,8 @@ package org.syncany.plugins.s3;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
 import org.simpleframework.xml.Element;
-import org.simpleframework.xml.core.Validate;
 import org.syncany.plugins.transfer.Encrypted;
 import org.syncany.plugins.transfer.Setup;
-import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.TransferSettings;
 
 /**
@@ -44,12 +42,12 @@ public class S3TransferSettings extends TransferSettings {
 	@Setup(order = 3, description = "Bucket")
 	private String bucket;
 
-	@Element(name = "location", required = false)
-	@Setup(order = 4, description = "Location (leave blank if location not listed)")
+	@Element(name = "location", required = true)
+	@Setup(order = 4, description = "Location")
 	private Location location;
 
 	@Element(name = "endpoint", required = false)
-	@Setup(order = 5, description = "Endpoint (non-standard S3-compatible backends only)")
+	@Setup(order = 5, description = "Endpoint (non-standard S3-compatible backends only, overrides location)")
 	private String endpoint;
 
 	private ProviderCredentials credentials;
@@ -80,12 +78,5 @@ public class S3TransferSettings extends TransferSettings {
 
 	public String getEndpoint() {
 		return endpoint;
-	}
-
-	@Validate
-	public void checkIfEndpointOrLocationIsSet() throws StorageException {
-		if (location == null && endpoint == null) {
-			throw new StorageException("Either location or endpoint have to be set");
-		}
 	}
 }
