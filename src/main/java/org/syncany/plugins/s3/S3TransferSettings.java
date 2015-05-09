@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,16 @@ package org.syncany.plugins.s3;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.security.ProviderCredentials;
 import org.simpleframework.xml.Element;
+import org.simpleframework.xml.core.Validate;
 import org.syncany.plugins.transfer.Encrypted;
 import org.syncany.plugins.transfer.Setup;
+import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.TransferSettings;
 
+/**
+ * @author Philipp C. Heckel <philipp.heckel@gmail.com>
+ * @author Christian Roth <christian.roth@port17.de>
+ */
 public class S3TransferSettings extends TransferSettings {
 	@Element(name = "accessKey", required = true)
 	@Setup(order = 1, description = "Access Key")
@@ -38,13 +44,13 @@ public class S3TransferSettings extends TransferSettings {
 	@Setup(order = 3, description = "Bucket")
 	private String bucket;
 
-	@Element(name = "endpoint", required = false)
-	@Setup(order = 4, description = "Endpoint (non-standard S3-compatible backends only)")
-	private String endpoint;
-
-	@Element(name = "location", required = true)
-	@Setup(order = 5, description = "Location (ignored for if endpoint is set)")
+	@Element(name = "location", required = false)
+	@Setup(order = 4, description = "Location (leave blank if location not listed)")
 	private Location location = Location.US_WEST;
+
+	@Element(name = "endpoint", required = false)
+	@Setup(order = 5, description = "Endpoint (non-standard S3-compatible backends only)")
+	private String endpoint;
 
 	private ProviderCredentials credentials;
 
@@ -74,5 +80,12 @@ public class S3TransferSettings extends TransferSettings {
 
 	public String getEndpoint() {
 		return endpoint;
+	}
+
+	@Validate
+	public void checkIfEndpointOrLocationIsSet() throws StorageException {
+		if (location == null || endpoint == null) {
+			throw new StorageException("Either location or endpoint have to be set");
+		}
 	}
 }
