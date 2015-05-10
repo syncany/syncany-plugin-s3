@@ -44,7 +44,7 @@ public class S3TransferSettings extends TransferSettings {
 
 	@Element(name = "location", required = true)
 	@Setup(order = 4, description = "Location")
-	private Location location;
+	private Location location = Location.US_WEST;
 
 	@Element(name = "endpoint", required = false)
 	@Setup(order = 5, description = "Alternative S3-compatible endpoint, overrides location")
