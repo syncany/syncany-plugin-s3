@@ -38,10 +38,13 @@ import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
 import org.syncany.config.Config;
+import org.syncany.plugins.s3.S3TransferManager.S3ReadAfterWriteConsistentFeatureExtension;
 import org.syncany.plugins.transfer.AbstractTransferManager;
 import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.StorageMoveException;
 import org.syncany.plugins.transfer.TransferManager;
+import org.syncany.plugins.transfer.features.ReadAfterWriteConsistent;
+import org.syncany.plugins.transfer.features.ReadAfterWriteConsistentFeatureExtension;
 import org.syncany.plugins.transfer.files.ActionRemoteFile;
 import org.syncany.plugins.transfer.files.CleanupRemoteFile;
 import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
@@ -72,6 +75,7 @@ import org.syncany.plugins.transfer.files.TransactionRemoteFile;
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  * @author Christian Roth <christian.roth@port17.de>
  */
+@ReadAfterWriteConsistent(extension = S3ReadAfterWriteConsistentFeatureExtension.class)
 public class S3TransferManager extends AbstractTransferManager {
 	private enum Type {
 		GOOGLE, NON_STANDARD, S3
@@ -480,5 +484,30 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 
 		throw new IllegalArgumentException("Unknown storage location type " + getSettings().getLocation());
+	}
+
+	public static class S3ReadAfterWriteConsistentFeatureExtension implements ReadAfterWriteConsistentFeatureExtension {
+		private final S3TransferManager s3TransferManager;
+
+		public S3ReadAfterWriteConsistentFeatureExtension(S3TransferManager s3TransferManager) {
+			this.s3TransferManager = s3TransferManager;
+		}
+
+		@Override
+		public boolean exists(RemoteFile remoteFile) throws StorageException {
+			try {
+				s3TransferManager.service.getObjectDetails(s3TransferManager.bucket.getName(), s3TransferManager.getRemoteFile(remoteFile));
+			}
+			catch (ServiceException e) {
+				if (e.getResponseCode() == 404) {
+					return false;
+				}
+				else {
+					throw new StorageException("Unable to verify if files exists", e);
+				}
+			}
+
+			return true;
+		}
 	}
 }
