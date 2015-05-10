@@ -123,9 +123,12 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 
 		switch (getStorageType()) {
-			case NON_STANDARD:
-				jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
-				break;
+		case NON_STANDARD:
+			jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
+			break;
+			
+		default:
+			break;
 		}
 	}
 
