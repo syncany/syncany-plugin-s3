@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpec;
-
 import org.syncany.config.to.ConfigTO;
 import org.syncany.config.to.DefaultRepoTOFactory;
 import org.syncany.config.to.RepoTO;
@@ -36,11 +32,15 @@ import org.syncany.crypto.CipherSpecs;
 import org.syncany.crypto.CipherUtil;
 import org.syncany.operations.OperationResult;
 import org.syncany.operations.init.GenlinkOperationOptions;
+import org.syncany.operations.init.InitOperation;
 import org.syncany.operations.init.InitOperationOptions;
 import org.syncany.operations.init.InitOperationResult;
 import org.syncany.operations.init.InitOperationResult.InitResultCode;
 import org.syncany.plugins.transfer.StorageTestResult;
 import org.syncany.plugins.transfer.TransferSettings;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpec;
 
 public class InitCommand extends AbstractInitCommand {
 	public static final int REPO_ID_LENGTH = 32;
@@ -65,7 +65,7 @@ public class InitCommand extends AbstractInitCommand {
 		operationOptions = parseOptions(operationArgs);
 
 		while (retryNeeded && performOperation) {
-			InitOperationResult operationResult = client.init(operationOptions, this);
+			InitOperationResult operationResult = new InitOperation(operationOptions, this).execute();
 			printResults(operationResult);
 
 			retryNeeded = operationResult.getResultCode() != InitResultCode.OK;
@@ -87,7 +87,7 @@ public class InitCommand extends AbstractInitCommand {
 		InitOperationOptions operationOptions = new InitOperationOptions();
 
 		OptionParser parser = new OptionParser();
-		OptionSpec<Void> optionCreateTargetPath = parser.acceptsAll(asList("t", "create-target"));
+		OptionSpec<Void> optionNoCreateTarget = parser.acceptsAll(asList("T", "no-create-target"));
 		OptionSpec<Void> optionAdvanced = parser.acceptsAll(asList("a", "advanced"));
 		OptionSpec<Void> optionNoCompression = parser.acceptsAll(asList("G", "no-compression"));
 		OptionSpec<Void> optionNoEncryption = parser.acceptsAll(asList("E", "no-encryption"));
@@ -95,18 +95,22 @@ public class InitCommand extends AbstractInitCommand {
 		OptionSpec<String> optionPluginOpts = parser.acceptsAll(asList("o", "plugin-option")).withRequiredArg();
 		OptionSpec<Void> optionAddDaemon = parser.acceptsAll(asList("n", "add-daemon"));
 		OptionSpec<Void> optionShortUrl = parser.acceptsAll(asList("s", "short"));
+		OptionSpec<Void> optionHeadlessMode = parser.acceptsAll(asList("l", "headless"));
 		OptionSpec<String> optionPassword = parser.acceptsAll(asList("password")).withRequiredArg();
 
 		OptionSet options = parser.parse(operationArguments);
 
-		// Set interactivity mode  
+		// Set interactivity mode
 		isInteractive = !options.has(optionPlugin);
+
+		// Set headless mode
+		isHeadless = options.has(optionHeadlessMode);
 
 		// Ask or set transfer settings
 		TransferSettings transferSettings = createTransferSettingsFromOptions(options, optionPlugin, optionPluginOpts);
 
 		// Some misc settings
-		boolean createTargetPath = options.has(optionCreateTargetPath);
+		boolean createTargetPath = !options.has(optionNoCreateTarget);
 		boolean advancedModeEnabled = options.has(optionAdvanced);
 		boolean encryptionEnabled = !options.has(optionNoEncryption);
 		boolean compressionEnabled = !options.has(optionNoCompression);
@@ -114,7 +118,7 @@ public class InitCommand extends AbstractInitCommand {
 		// Cipher specs: --no-encryption, --advanced
 		List<CipherSpec> cipherSpecs = getCipherSpecs(encryptionEnabled, advancedModeEnabled);
 
-		// Compression: --no-compression 
+		// Compression: --no-compression
 		// DefaultRepoTOFactory also creates default chunkers
 		RepoTOFactory repoTOFactory = new DefaultRepoTOFactory(compressionEnabled, cipherSpecs);
 

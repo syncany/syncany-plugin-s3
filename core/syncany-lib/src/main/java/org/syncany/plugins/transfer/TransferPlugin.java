@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,18 @@ import org.syncany.util.ReflectionUtil;
  * {@link TransferPlugin} (this class), {@link TransferSettings} (connection
  * details) and {@link TransferManager} (transfer methods).<br/><br/>
  *
- * <p>Links between the classes can be created by annotating this class with
- * {@link org.syncany.plugins.transfer.PluginSettings} and {@link org.syncany.plugins.transfer.PluginManager},
- * respectively.
+ * <p>Plugins have to follow a naming convention:
+ * <ul>
+ *   <li>Package names have to be lower snaked cased</li>
+ *   <li>Class names have to be camel cased</li>
+ *   <li>Package names will be converted to class names by replacing underscores ('_') and uppercasing the
+ *      subsequent character.</li>
+ * </ul>
+ *
+ * <p>Example:</b> 
+ * A plugin is called DummyPlugin, hence <i>org.syncany.plugins.dummy_plugin.DummyPluginTransferPlugin</i> is the
+ * plugin's {@link TransferPlugin} class and <i>org.syncany.plugins.dummy_plugin.DummyPluginTransferSettings</i> is the
+ * corresponding {@link TransferSettings} implementation.
  *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  * @author Christian Roth <christian.roth@port17.de>

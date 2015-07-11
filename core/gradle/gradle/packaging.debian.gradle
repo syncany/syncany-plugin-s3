@@ -16,7 +16,7 @@ task debianManpages(dependsOn: installApp) {
 	
 		exec {
 			workingDir rootProject.file("gradle/debian")
-			commandLine "./makemanpages.pl"
+			commandLine "./makemanpages.sh"
 		}
 	}
 }
@@ -27,12 +27,6 @@ task debianPrepare(dependsOn: [debianClean, installApp, debianManpages]) {
 			from rootProject.files("build/install/syncany") 
 			into rootProject.file("build/debian/syncany")
 			exclude("**/*.bat")
-		}
-
-		copy {
-			from rootProject.files("build/install/syncany/LICENSE.md") 
-			into rootProject.file("build/debian/syncany/debian")
-			rename("LICENSE.md", "copyright")
 		}
 
 		copy {

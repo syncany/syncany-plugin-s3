@@ -1,7 +1,7 @@
 # Maintainer: Pim Otte <otte dot pim at gmail dot com>
 pkgname=syncany
-pkgver=0.3.0_alpha
-_realver=0.3.0-alpha
+pkgver=0.4.5_alpha
+_realver=0.4.5-alpha
 pkgrel=1
 pkgdesc="Cloud storage and filesharing application with a focus on security and abstraction of storage."
 arch=(any)
@@ -9,21 +9,32 @@ url="http://www.syncany.org/"
 license=('GPL3')
 depends=('java-runtime>=7' 'bash-completion')
 source=("http://syncany.org/dist/$pkgname-${_realver}.tar.gz"
-        syncany
-        syncany.bash-completion)
-sha256sums=('158e31a99d6c9b877dbd7ad72ec10cf9ea39f55e53e1cda401ca1941d73fb105'
-            'df627b5306967f6e0d9a4bf264bdac44caee14ff8e9e7df93fc291339a1d353e'
-            '043bdc2bb47fad48a5d8ca6cd612faf5b8d00bd66677f4cea99dde84c129e209')
+        )
+sha256sums=('7e8fbad0d9bf90369ad21fd1b3d54c7025738f2da9b1a364273f16cb76d59069')
 
 package() {
-    install -Dm755 syncany "${pkgdir}/usr/bin/syncany"
-    install -Dm755 syncany.bash-completion "${pkgdir}/etc/bash_completion.d/syncany"
-	cd "$srcdir/$pkgname-${_realver}/lib"
-    for jar in *
+    install -Dm644 "$srcdir/$pkgname-${_realver}/bash/syncany.bash-completion" "${pkgdir}/etc/bash_completion.d/syncany"
+
+	cd "$srcdir/$pkgname-${_realver}/man/man"
+    for man in *
     do
-        install -Dm644 "$jar" "${pkgdir}/usr/share/java/${pkgname}/$jar"
+        install -Dm644 "$man" "${pkgdir}/usr/share/man/man1/$man"
+        install -Dm644 "$man" "${pkgdir}/usr/share/man/man1/${man/sy/syncany}"
     done
 
+
+    install -Dm755 "$srcdir/$pkgname-${_realver}/bin/syncany" "${pkgdir}/usr/share/java/${pkgname}/bin/syncany"
+    cd "$srcdir/$pkgname-${_realver}/lib"
+
+    for jar in *
+    do
+        install -Dm644 "$jar" "${pkgdir}/usr/share/java/${pkgname}/lib/$jar"
+    done
+
+    mkdir -p "${pkgdir}/usr/bin"
+    ln -s "/usr/share/java/${pkgname}/bin/syncany" "${pkgdir}/usr/bin/syncany"
+
+
     #Optional: symlink sy
-    #ln -s ${pkgdir}/usr/bin/syncany /usr/bin/sy
+    #ln -s  "/usr/share/java/${pkgname}/bin/syncany" "${pkgdir}/usr/bin/sy"
 }

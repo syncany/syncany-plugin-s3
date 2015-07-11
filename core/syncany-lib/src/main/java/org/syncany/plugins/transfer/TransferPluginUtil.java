@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,15 +22,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.syncany.plugins.Plugin;
-
 import com.google.common.base.CaseFormat;
 
 /**
  * Helper class for {@link TransferPlugin}s, using to retrieve
  * the required transfer plugin classes -- namely {@link TransferSettings},
- * {@link TransferManager} and {@link TransferPlugin}. <br/>
- * <br/>
- * <i>Plugins have to follow convention</i>
+ * {@link TransferManager} and {@link TransferPlugin}.
  *
  * @author Christian Roth <christian.roth@port17.de>
  */
@@ -58,6 +55,7 @@ public abstract class TransferPluginUtil {
 				String pluginPackageIdentifier = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, pluginNameIdentifier);
 				String transferSettingsClassName = MessageFormat.format(PLUGIN_TRANSFER_SETTINGS_CLASS_NAME, pluginPackageIdentifier,
 						pluginNameIdentifier);
+				
 				return Class.forName(transferSettingsClassName).asSubclass(TransferSettings.class);
 			}
 			catch (Exception e) {
@@ -110,21 +108,6 @@ public abstract class TransferPluginUtil {
 				throw new RuntimeException("Cannot find matching transfer plugin class for plugin settings (" + transferSettingsClass.getName() + ")");
 			}
 		}
-	}
-	
-	/**
-	 * Determines the {@link OAuthGenerator} class for the given class
-	 * if an {@link OAuth} annotation is present.
-	 */
-	public static Class<? extends OAuthGenerator> getOAuthGeneratorClass(Class<? extends TransferSettings> clazz) {
-		OAuth oauthAnnotation = clazz.getAnnotation(OAuth.class);
-		
-		if (oauthAnnotation != null) {
-			return oauthAnnotation.value();
-		}
-		else {
-			return null;
-		}		
 	}
 
 	private static String getPluginPackageName(Class<?> clazz) {

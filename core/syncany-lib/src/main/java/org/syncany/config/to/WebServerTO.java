@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,18 @@ package org.syncany.config.to;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 
+/**
+ * This class is the access object to configure the local daemon web
+ * server. It mainly defines whether to enable/disable the server,
+ * its bind port and IP address, as well as which certificates and
+ * key pairs to use. 
+ * 
+ * <p>It uses the Simple framework for XML serialization, and its corresponding
+ * annotation-based configuration.
+ *
+ * @see <a href="http://simple.sourceforge.net/">Simple framework</a>
+ * @author Philipp C. Heckel <philipp.heckel@gmail.com>
+ */
 @Root(strict = false)
 public class WebServerTO {
 	@Element(required = false)

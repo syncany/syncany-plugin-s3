@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,20 +36,20 @@ import org.syncany.util.FileUtil;
 import org.syncany.util.SqlRunner;
 
 /**
- * This class is a helper class that provides the connection to the embedded 
+ * This class is a helper class that provides the connection to the embedded
  * HSQLDB database. It is mainly used by the data access objects.
- * 
+ *
  * <p>The class provides methods to create {@link Connection} objects, retrieve
- * SQL statements from the resources, and create the initial tables when the 
- * application is first started.   
- * 
+ * SQL statements from the resources, and create the initial tables when the
+ * application is first started.
+ *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
 public class DatabaseConnectionFactory {
 	private static final Logger logger = Logger.getLogger(DatabaseConnectionFactory.class.getSimpleName());
 
 	public static final String DATABASE_DRIVER = "org.hsqldb.jdbcDriver";
-	public static final String DATABASE_CONNECTION_FILE_STRING = "jdbc:hsqldb:file:%DATABASEFILE%;user=sa;password=;create=true;write_delay=false;hsqldb.write_delay=false;shutdown=true";
+	public static final String DATABASE_CONNECTION_FILE_STRING = "jdbc:hsqldb:file:%DATABASEFILE%;user=sa;password=;create=true;write_delay=false;hsqldb.write_delay=false";
 	public static final String DATABASE_RESOURCE_PATTERN = "/org/syncany/database/sql/%s";
 	public static final String DATABASE_RESOURCE_CREATE_ALL = "script.create.all.sql";
 
@@ -69,11 +69,12 @@ public class DatabaseConnectionFactory {
 	 * Creates a database connection using the given database file. If the database exists and the
 	 * application tables are present, a valid connection is returned. If not, the database is created
 	 * and the application tables are created.
-	 * 
+	 *
 	 * @param databaseFile File at which to create/load the database
-	 * @return Returns a valid database connection 
+	 * @param readOnly True if this connection is only used for reading.
+	 * @return Returns a valid database connection
 	 */
-	public static Connection createConnection(File databaseFile) {
+	public static Connection createConnection(File databaseFile, boolean readOnly) {
 		String databaseFilePath = FileUtil.getDatabasePath(databaseFile.toString());
 		String connectionString = DATABASE_CONNECTION_FILE_STRING.replaceAll("%DATABASEFILE%", databaseFilePath);
 
@@ -81,16 +82,16 @@ public class DatabaseConnectionFactory {
 			connectionString += ";hsqldb.sqllog=3";
 		}
 
-		return createConnection(connectionString);
+		return createConnection(connectionString, readOnly);
 	}
 
 	/**
 	 * Retrieves a SQL statement template from a resource using the given resource identifier. From
 	 * this template, a {@link PreparedStatement} can be created.
-	 * 
+	 *
 	 * <p>The statement is either loaded from the resource (if it is first encountered),
 	 * or loaded from the cache if it has been seen before.
-	 * 
+	 *
 	 * @param resourceIdentifier Path to the resource, e.g. "create.all.sql"
 	 * @return Returns the SQL statement read from the resource
 	 */
@@ -122,10 +123,11 @@ public class DatabaseConnectionFactory {
 		return statementInputStream;
 	}
 
-	private static Connection createConnection(String connectionString) {
+	private static Connection createConnection(String connectionString, boolean readOnly) {
 		try {
 			Connection connection = DriverManager.getConnection(connectionString);
 			connection.setAutoCommit(false);
+			connection.setReadOnly(readOnly);
 
 			// We use UNCOMMITTED read to enable operations to alter the database and continue
 			// with those changes, but still roll back the database if something goes wrong later.
@@ -148,19 +150,17 @@ public class DatabaseConnectionFactory {
 		}
 	}
 
-	private static boolean tablesExist(Connection connection) {
-		try {
-			ResultSet resultSet = connection.prepareStatement("select count(*) from chunk").executeQuery();
+	private static boolean tablesExist(Connection connection) throws SQLException {
+		try (ResultSet resultSet = connection.prepareStatement(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.SYSTEM_TABLES WHERE TABLE_TYPE='TABLE'")
+				.executeQuery()) {
+			resultSet.next();
+			int numberOfTables = resultSet.getInt(1);
+			logger.log(Level.INFO, "Found " + numberOfTables + " tables.");
 
-			if (resultSet.next()) {
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-		catch (SQLException e) {
-			return false;
+			// If we have 12 or more tables, we assume the creation scripts has created
+			// all tables and indices.
+			return (numberOfTables >= 12);
 		}
 	}
 
@@ -189,7 +189,7 @@ public class DatabaseConnectionFactory {
 				String trimmedLine = line.trim();
 
 				if (!trimmedLine.startsWith("--")) {
-					preparedStatementStr.append(" ");
+					preparedStatementStr.append(' ');
 					preparedStatementStr.append(trimmedLine);
 				}
 			}

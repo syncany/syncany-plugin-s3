@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import java.security.KeyStore;
 import java.util.Map;
 
 import org.syncany.config.to.UserConfigTO;
+import org.syncany.crypto.CipherException;
 import org.syncany.crypto.CipherUtil;
 import org.syncany.crypto.SaltedSecretKey;
 import org.syncany.util.EnvironmentUtil;
@@ -111,8 +112,12 @@ public class UserConfig {
 		return userConfigFile;
 	}
 
-	public static boolean preventStandbyEnabled() {
+	public static boolean isPreventStandby() {
 		return preventStandby;
+	}
+	
+	public static void setPreventStandby(boolean newPreventStandby) {
+		preventStandby = newPreventStandby;
 	}
 
 	public static SaltedSecretKey getConfigEncryptionKey() {
@@ -174,11 +179,12 @@ public class UserConfig {
 
 			// System properties
 			for (Map.Entry<String, String> systemProperty : userConfigTO.getSystemProperties().entrySet()) {
-				System.setProperty(systemProperty.getKey(), systemProperty.getValue());
+				String propertyValue = (systemProperty.getValue() != null) ? systemProperty.getValue() : ""; 
+				System.setProperty(systemProperty.getKey(), propertyValue);
 			}
 
 			// Other options
-			preventStandby = userConfigTO.preventStandbyEnabled();
+			preventStandby = userConfigTO.isPreventStandby();
 			configEncryptionKey = userConfigTO.getConfigEncryptionKey();
 		}
 		catch (ConfigException e) {
@@ -191,9 +197,6 @@ public class UserConfig {
 	private static void writeExampleUserConfigFile(File userConfigFile) {
 		UserConfigTO userConfigTO = new UserConfigTO();
 
-		userConfigTO.getSystemProperties().put("example.property", "This is a demo property. You can delete it.");
-		userConfigTO.getSystemProperties().put("syncany.rocks", "Yes, it does!");
-
 		try {
 			System.out.println("First launch, creating a secret key (could take a sec)...");
 			SaltedSecretKey configEncryptionKey = CipherUtil.createMasterKey(CipherUtil.createRandomAlphabeticString(USER_CONFIG_ENCRYPTION_KEY_LENGTH));
@@ -201,8 +204,15 @@ public class UserConfig {
 			userConfigTO.setConfigEncryptionKey(configEncryptionKey);
 			userConfigTO.save(userConfigFile);
 		}
-		catch (Exception e) {
-			// Don't care!
+		catch (CipherException e) {
+			System.err.println("ERROR: " + e.getMessage());
+			System.err.println("       Failed to create masterkey.");
+			System.err.println();
+		}
+		catch (ConfigException e) {
+			System.err.println("ERROR: " + e.getMessage());
+			System.err.println("       Failed to save to file.");
+			System.err.println();
 		}
 	}
 

@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ package org.syncany.config;
  * 
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
+// TODO [medium] This class belongs in the 'util' package
 public class LocalEventBus extends InternalEventBus {	
 	public static LocalEventBus getInstance() {
 		return InternalEventBus.getInstance(LocalEventBus.class);

@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@ package org.syncany.plugins.transfer;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+
+import org.syncany.util.ReflectionUtil;
 
 /**
  * A plugin option represents a single setting of a transfer plugin
@@ -80,7 +82,7 @@ public class TransferPluginOption {
 	public Type getType() {
 		return type;
 	}
-	
+
 	public FileType getFileType() {
 		return fileType;
 	}
@@ -96,7 +98,7 @@ public class TransferPluginOption {
 	public boolean isSingular() {
 		return singular;
 	}
-	
+
 	public boolean isVisible() {
 		return visible;
 	}
@@ -145,15 +147,15 @@ public class TransferPluginOption {
 		else if (type == Boolean.TYPE) {
 			return true;
 		}
+		else if (ReflectionUtil.getClassFromType(type).isEnum()) {
+			return ReflectionUtil.isValidEnum(value.toUpperCase(), ReflectionUtil.getClassFromType(type));
+		}
 		else if (type == File.class) {
 			if (isRequired()) {
-				try {
-					new File(value);
+				if (value != null) {
 					return true;
 				}
-				catch (NullPointerException e) {
-					return false;
-				}
+				return false;
 			}
 			else {
 				return true;

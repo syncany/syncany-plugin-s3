@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package org.syncany.config;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.syncany.chunk.Chunker;
 import org.syncany.chunk.CipherTransformer;
@@ -71,6 +72,9 @@ public class Config {
 	public static final String FILE_PORT = "port.xml";
 	public static final String FILE_TRANSACTION = "transaction-actions.xml";
 	public static final String FILE_TRANSACTION_DATABASE = "transaction-database.xml";
+	public static final String FILE_TRANSACTION_PATTERN = "transaction-actions.%010d.xml";
+	public static final String FILE_TRANSACTION_DATABASE_PATTERN = "transaction-database.%010d.xml";
+	public static final String FILE_TRANSACTION_LIST = "transaction-list.txt";
 
 	private byte[] repoId;
 	private String machineName;
@@ -186,7 +190,7 @@ public class Config {
 			transformer = new NoTransformer();
 		}
 		else {
-			ArrayList<TransformerTO> transformerTOs = new ArrayList<TransformerTO>(repoTO.getTransformers());
+			List<TransformerTO> transformerTOs = new ArrayList<TransformerTO>(repoTO.getTransformers());
 			Transformer lastTransformer = null;
 
 			for (int i = transformerTOs.size() - 1; i >= 0; i--) {
@@ -224,7 +228,7 @@ public class Config {
 			}
 
 			try {
-				transferSettings = (TransferSettings) configTO.getTransferSettings();
+				transferSettings = configTO.getTransferSettings();
 			}
 			catch (Exception e) {
 				throw new ConfigException("Cannot initialize storage: " + e.getMessage(), e);
@@ -233,7 +237,11 @@ public class Config {
 	}
 
 	public java.sql.Connection createDatabaseConnection() {
-		return DatabaseConnectionFactory.createConnection(getDatabaseFile());
+		return DatabaseConnectionFactory.createConnection(getDatabaseFile(), false);
+	}
+
+	public java.sql.Connection createDatabaseConnection(boolean readOnly) {
+		return DatabaseConnectionFactory.createConnection(getDatabaseFile(), readOnly);
 	}
 
 	public File getCacheDir() {
@@ -273,7 +281,7 @@ public class Config {
 	}
 
 	public void setConnection(TransferSettings connection) {
-		this.transferSettings = connection;
+		transferSettings = connection;
 	}
 
 	public byte[] getRepoId() {
@@ -338,5 +346,17 @@ public class Config {
 
 	public File getTransactionDatabaseFile() {
 		return new File(stateDir, FILE_TRANSACTION_DATABASE);
+	}
+
+	public File getTransactionListFile() {
+		return new File(stateDir, FILE_TRANSACTION_LIST);
+	}
+
+	public File getTransactionFile(long databaseVersionNumber) {
+		return new File(stateDir, String.format(FILE_TRANSACTION_PATTERN, databaseVersionNumber));
+	}
+
+	public File getTransactionDatabaseFile(long databaseVersionNumber) {
+		return new File(stateDir, String.format(FILE_TRANSACTION_DATABASE_PATTERN, databaseVersionNumber));
 	}
 }
