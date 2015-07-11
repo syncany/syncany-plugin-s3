@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ public class UpOperationResult implements OperationResult {
 	private UpResultCode resultCode;
 	private StatusOperationResult statusResult = new StatusOperationResult();
 	private ChangeSet uploadChangeSet = new ChangeSet();
+	private long transactionsCompleted = 0L;
 
 	public UpResultCode getResultCode() {
 		return resultCode;
@@ -52,5 +53,13 @@ public class UpOperationResult implements OperationResult {
 
 	public ChangeSet getChangeSet() {
 		return uploadChangeSet;
+	}
+
+	public long getTransactionsCompleted() {
+		return transactionsCompleted;
+	}
+
+	public void incrementTransactionsCompleted() {
+		transactionsCompleted++;
 	}
 }

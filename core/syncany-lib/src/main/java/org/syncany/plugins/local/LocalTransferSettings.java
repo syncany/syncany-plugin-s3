@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import org.syncany.plugins.transfer.TransferSettings;
 public class LocalTransferSettings extends TransferSettings {
 	@Element(required = true)
 	@Setup(order = 1, fileType = FileType.FOLDER, description = "Path to local repository")
-	public File path;	
+	public File path;
 
 	public File getPath() {
 		return path;

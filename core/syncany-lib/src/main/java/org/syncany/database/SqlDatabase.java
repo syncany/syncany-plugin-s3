@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.syncany.config.Config;
@@ -40,6 +41,7 @@ import org.syncany.database.dao.FileContentSqlDao;
 import org.syncany.database.dao.FileHistorySqlDao;
 import org.syncany.database.dao.FileVersionSqlDao;
 import org.syncany.database.dao.MultiChunkSqlDao;
+import org.syncany.operations.cleanup.CleanupOperationOptions.TimeUnit;
 import org.syncany.operations.down.DatabaseBranch;
 import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
 
@@ -49,13 +51,13 @@ import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
  * <p>This class combines all specific SQL database data access objects (DAOs) into
  * a single class, and forwards all method calls to the responsible DAO.  
  * 
- * @see {@link ApplicationSqlDao}
- * @see {@link ChunkSqlDao}
- * @see {@link FileContentSqlDao}
- * @see {@link FileVersionSqlDao}
- * @see {@link FileHistorySqlDao}
- * @see {@link MultiChunkSqlDao}
- * @see {@link DatabaseVersionSqlDao}
+ * @see ApplicationSqlDao
+ * @see ChunkSqlDao
+ * @see FileContentSqlDao
+ * @see FileVersionSqlDao
+ * @see FileHistorySqlDao
+ * @see MultiChunkSqlDao
+ * @see DatabaseVersionSqlDao
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
 public class SqlDatabase {
@@ -71,7 +73,11 @@ public class SqlDatabase {
 	protected DatabaseVersionSqlDao databaseVersionDao;
 
 	public SqlDatabase(Config config) {
-		this.connection = config.createDatabaseConnection();
+		this(config, false);
+	}
+
+	public SqlDatabase(Config config, boolean readOnly) {
+		this.connection = config.createDatabaseConnection(readOnly);
 		this.applicationDao = new ApplicationSqlDao(connection);
 		this.chunkDao = new ChunkSqlDao(connection);
 		this.fileContentDao = new FileContentSqlDao(connection);
@@ -79,6 +85,7 @@ public class SqlDatabase {
 		this.fileHistoryDao = new FileHistorySqlDao(connection, fileVersionDao);
 		this.multiChunkDao = new MultiChunkSqlDao(connection);
 		this.databaseVersionDao = new DatabaseVersionSqlDao(connection, chunkDao, fileContentDao, fileVersionDao, fileHistoryDao, multiChunkDao);
+
 	}
 
 	// General
@@ -89,6 +96,19 @@ public class SqlDatabase {
 
 	public void commit() throws SQLException {
 		connection.commit();
+	}
+
+	@Override
+	public void finalize() {
+		try {
+			if (!connection.isClosed()) {
+				connection.commit();
+				connection.close();
+			}
+		}
+		catch (SQLException e) {
+			logger.log(Level.WARNING, "Failed to close database connection. Possible resource leak.", e);
+		}
 	}
 
 	public void rollback() throws SQLException {
@@ -161,6 +181,10 @@ public class SqlDatabase {
 		return databaseVersionDao.getDatabaseVersionsTo(machineName, maxLocalClientVersion);
 	}
 
+	public Iterator<DatabaseVersion> getLastDatabaseVersions(int maxDatabaseVersionCount, int startDatabaseVersionIndex, int maxFileHistoryCount) {
+		return databaseVersionDao.getLastDatabaseVersions(maxDatabaseVersionCount, startDatabaseVersionIndex, maxFileHistoryCount);
+	}
+
 	public DatabaseVersionHeader getLastDatabaseVersionHeader() {
 		return databaseVersionDao.getLastDatabaseVersionHeader();
 	}
@@ -175,10 +199,6 @@ public class SqlDatabase {
 
 	public long writeDatabaseVersion(DatabaseVersion databaseVersion) {
 		return databaseVersionDao.writeDatabaseVersion(databaseVersion);
-	}
-
-	public void persistPurgeDatabaseVersion(DatabaseVersion purgeDatabaseVersion) {
-		databaseVersionDao.writePurgeDatabaseVersion(purgeDatabaseVersion);
 	}
 
 	public void writeDatabaseVersionHeader(DatabaseVersionHeader databaseVersionHeader) throws SQLException {
@@ -217,6 +237,14 @@ public class SqlDatabase {
 		return fileHistoryDao.getFileHistoriesWithLastVersion();
 	}
 
+	public Collection<PartialFileHistory> getFileHistoriesWithLastVersionByChecksumSizeAndModifiedDate(String checksum, long size, Date modifiedDate) {
+		return fileHistoryDao.getFileHistoriesByChecksumSizeAndModifiedDate(checksum, size, modifiedDate);
+	}
+
+	public PartialFileHistory getFileHistoriesWithLastVersionByPath(String path) {
+		return fileHistoryDao.getFileHistoryWithLastVersionByPath(path);
+	}
+
 	private void removeUnreferencedFileHistories() throws SQLException {
 		fileHistoryDao.removeUnreferencedFileHistories();
 	}
@@ -231,26 +259,18 @@ public class SqlDatabase {
 		return fileVersionDao.getCurrentFileTree();
 	}
 
-	public Map<String, FileVersion> getCurrentFileTree(String prefix) {
-		return fileVersionDao.getCurrentFileTree(prefix);
-	}
-
 	public void removeSmallerOrEqualFileVersions(Map<FileHistoryId, FileVersion> purgeFileVersions) throws SQLException {
 		fileVersionDao.removeFileVersions(purgeFileVersions);
 	}
 
-	@Deprecated
-	public FileVersion getFileVersionByPath(String path) {
-		return fileVersionDao.getFileVersionByPath(path);
+	public void removeFileVersions(Map<FileHistoryId, List<FileVersion>> purgeFileVersions) throws SQLException {
+		fileVersionDao.removeSpecificFileVersions(purgeFileVersions);
 	}
-
-	@Deprecated
-	public Map<String, FileVersion> getFileTreeAtDate(Date date) {
-		return fileVersionDao.getFileTreeAtDate(date);
-	}
-
-	public Map<String, FileVersion> getFileTree(String filter, Date date, boolean recursive, Set<FileType> fileTypes) {
-		return fileVersionDao.getFileTree(filter, date, recursive, fileTypes);
+	
+	public List<FileVersion> getFileList(String pathExpression, Date date, boolean fileHistoryId, boolean recursive, boolean deleted,
+			Set<FileType> fileTypes) {
+		
+		return fileVersionDao.getFileList(pathExpression, date, fileHistoryId, recursive, deleted, fileTypes);
 	}
 
 	public List<FileVersion> getFileHistory(FileHistoryId fileHistoryId) {
@@ -261,8 +281,20 @@ public class SqlDatabase {
 		return fileVersionDao.getFileHistoriesWithMaxPurgeVersion(keepVersionsCount);
 	}
 
+	public Map<FileHistoryId, List<FileVersion>> getFileHistoriesToPurgeInInterval(long beginTimestamp, long endTimestamp, TimeUnit timeUnit) {
+		return fileVersionDao.getFileHistoriesToPurgeInInterval(beginTimestamp, endTimestamp, timeUnit);
+	}
+
+	public Map<FileHistoryId, List<FileVersion>> getFileHistoriesToPurgeBefore(long timestamp) {
+		return fileVersionDao.getFileHistoriesToPurgeBefore(timestamp);
+	}
+
 	public Map<FileHistoryId, FileVersion> getDeletedFileVersions() {
 		return fileVersionDao.getDeletedFileVersions();
+	}
+
+	public Map<FileHistoryId, FileVersion> getDeletedFileVersionsBefore(long timestamp) {
+		return fileVersionDao.getDeletedFileVersionsBefore(timestamp);
 	}
 
 	public FileVersion getFileVersion(FileHistoryId fileHistoryId, long version) {
@@ -334,4 +366,5 @@ public class SqlDatabase {
 	private void removeUnreferencedFileContents() throws SQLException {
 		fileContentDao.removeUnreferencedFileContents();
 	}
+
 }

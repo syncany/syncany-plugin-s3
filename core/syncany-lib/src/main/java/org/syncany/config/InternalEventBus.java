@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import com.google.common.eventbus.EventBus;
  * 
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
  */
+//TODO [medium] This class belongs in the 'util' package
 public abstract class InternalEventBus {
 	protected static final Logger logger = Logger.getLogger(InternalEventBus.class.getSimpleName());
 	private static Map<Class<? extends InternalEventBus>, InternalEventBus> instances = new HashMap<>();

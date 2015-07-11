@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,16 +30,21 @@ import org.apache.commons.io.FileUtils;
 import org.jets3t.service.Constants;
 import org.jets3t.service.Jets3tProperties;
 import org.jets3t.service.ServiceException;
+import org.jets3t.service.impl.rest.httpclient.GoogleStorageService;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.impl.rest.httpclient.RestStorageService;
+import org.jets3t.service.model.GSBucket;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.StorageBucket;
 import org.jets3t.service.model.StorageObject;
 import org.syncany.config.Config;
+import org.syncany.plugins.s3.S3TransferManager.S3ReadAfterWriteConsistentFeatureExtension;
 import org.syncany.plugins.transfer.AbstractTransferManager;
 import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.StorageMoveException;
 import org.syncany.plugins.transfer.TransferManager;
+import org.syncany.plugins.transfer.features.ReadAfterWriteConsistent;
+import org.syncany.plugins.transfer.features.ReadAfterWriteConsistentFeatureExtension;
 import org.syncany.plugins.transfer.files.ActionRemoteFile;
 import org.syncany.plugins.transfer.files.CleanupRemoteFile;
 import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
@@ -60,16 +65,22 @@ import org.syncany.plugins.transfer.files.TransactionRemoteFile;
  * in special sub-folders:
  *
  * <ul>
- *   <li>The <tt>databases</tt> folder keeps all the {@link DatabaseRemoteFile}s</li>
- *   <li>The <tt>multichunks</tt> folder keeps the actual data within the {@link MultiChunkRemoteFile}s</li>
+ * <li>The <tt>databases</tt> folder keeps all the {@link DatabaseRemoteFile}s</li>
+ * <li>The <tt>multichunks</tt> folder keeps the actual data within the {@link MultiChunkRemoteFile}s</li>
  * </ul>
  *
  * <p>Concrete implementations of this class must override the {@link #createBucket()} method and the
  * {@link #createService()} method.
  *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
+ * @author Christian Roth <christian.roth@port17.de>
  */
+@ReadAfterWriteConsistent(extension = S3ReadAfterWriteConsistentFeatureExtension.class)
 public class S3TransferManager extends AbstractTransferManager {
+	private enum Type {
+		GOOGLE, NON_STANDARD, S3
+	}
+
 	private static final String APPLICATION_CONTENT_TYPE = "application/x-syncany";
 	private static final Logger logger = Logger.getLogger(S3TransferManager.class.getSimpleName());
 
@@ -111,8 +122,13 @@ public class S3TransferManager extends AbstractTransferManager {
 			}
 		}
 
-		if (getSettings().getEndpoint() != null) {
+		switch (getStorageType()) {
+		case NON_STANDARD:
 			jets3tProperties.setProperty("s3service.s3-endpoint", getSettings().getEndpoint());
+			break;
+			
+		default:
+			break;
 		}
 	}
 
@@ -123,17 +139,39 @@ public class S3TransferManager extends AbstractTransferManager {
 	@Override
 	public void connect() throws StorageException {
 		if (service == null) {
-			service = new RestS3Service(getSettings().getCredentials(), "syncany", null, jets3tProperties);
+			try {
+				switch (getStorageType()) {
+					case GOOGLE:
+						service = new GoogleStorageService(getSettings().getCredentials(), "syncany", null, jets3tProperties);
+						break;
+
+					case NON_STANDARD:
+					case S3:
+						service = new RestS3Service(getSettings().getCredentials(), "syncany", null, jets3tProperties);
+						break;
+				}
+			}
+			catch (ServiceException e) {
+				throw new StorageException("Invalid service found", e);
+			}
 		}
 
 		if (bucket == null) {
-			if (getSettings().getEndpoint() != null) {
-				logger.log(Level.INFO, "Using non-standard endpoint, ignoring region.");
-				bucket = new S3Bucket(getSettings().getBucket());
-			}
-			else {
-				logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
-				bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation());
+			switch (getStorageType()) {
+				case NON_STANDARD:
+					logger.log(Level.INFO, "Using non-standard endpoint, ignoring region.");
+					bucket = new S3Bucket(getSettings().getBucket());
+					break;
+
+				case GOOGLE:
+					logger.log(Level.INFO, "Using Google endpoint, setting location.");
+					bucket = new GSBucket(getSettings().getBucket(), getSettings().getLocation().getLocationId());
+					break;
+
+				case S3:
+					logger.log(Level.INFO, "Using Amazon S3 endpoint, setting location.");
+					bucket = new S3Bucket(getSettings().getBucket(), getSettings().getLocation().getLocationId());
+					break;
 			}
 		}
 	}
@@ -168,7 +206,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			service.putObject(bucket.getName(), tempPathFolder);
 		}
 		catch (ServiceException e) {
-			throw new StorageException("Cannot initialize S3 bucket.", e);
+			throw new StorageException("Cannot initialize bucket.", e);
 		}
 	}
 
@@ -284,7 +322,7 @@ public class S3TransferManager extends AbstractTransferManager {
 					}
 					catch (Exception e) {
 						logger.log(Level.INFO, "Cannot create instance of " + remoteFileClass.getSimpleName() + " for object " + simpleRemoteName
-								+ "; maybe invalid file name pattern. Ignoring file.");
+										+ "; maybe invalid file name pattern. Ignoring file.");
 					}
 				}
 			}
@@ -308,7 +346,8 @@ public class S3TransferManager extends AbstractTransferManager {
 		}
 	}
 
-	private String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
+	@Override
+	public String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
 		if (remoteFile.equals(MultichunkRemoteFile.class)) {
 			return multichunksPath;
 		}
@@ -337,7 +376,7 @@ public class S3TransferManager extends AbstractTransferManager {
 			StorageObject tempFileObject = new StorageObject(tempRemoteFilePath);
 
 			tempFileObject.setContentType(APPLICATION_CONTENT_TYPE);
-			tempFileObject.setDataInputStream(new ByteArrayInputStream(new byte[] { 0x01, 0x02, 0x03 }));
+			tempFileObject.setDataInputStream(new ByteArrayInputStream(new byte[]{0x01, 0x02, 0x03}));
 			tempFileObject.setContentLength(3);
 
 			logger.log(Level.FINE, "- Uploading to bucket " + bucket.getName() + ": " + tempFileObject + " ...");
@@ -410,6 +449,65 @@ public class S3TransferManager extends AbstractTransferManager {
 		catch (Exception e) {
 			logger.log(Level.INFO, "testRepoFileExists: Retrieving repo file list does not exit.", e);
 			return false;
+		}
+	}
+
+	private Type getStorageType() {
+		if (getSettings().getEndpoint() != null) {
+			logger.log(Level.INFO, "Endpoint is set, assuming s3 non-standard");
+			return Type.NON_STANDARD;
+		}
+
+		switch (getSettings().getLocation()) {
+			case ASIA_PACIFIC:
+			case ASIA_PACIFIC_NORTHEAST:
+			case ASIA_PACIFIC_SINGAPORE:
+			case ASIA_PACIFIC_SOUTHEAST:
+			case ASIA_PACIFIC_SYDNEY:
+			case ASIA_PACIFIC_TOKYO:
+			case EU_FRANKFURT:
+			case EU_IRELAND:
+			case EUROPE:
+			case GOVCLOUD_FIPS_US_WEST:
+			case GOVCLOUD_US_WEST:
+			case SOUTH_AMERICA_EAST:
+			case SOUTH_AMERICA_SAO_PAULO:
+			case US_WEST:
+			case US_WEST_NORTHERN_CALIFORNIA:
+			case US_WEST_OREGON:
+				return Type.S3;
+
+			case GOOGLE_US:
+			case GOOGLE_ASIA:
+			case GOOGLE_EU:
+				return Type.GOOGLE;
+		}
+
+		throw new IllegalArgumentException("Unknown storage location type " + getSettings().getLocation());
+	}
+
+	public static class S3ReadAfterWriteConsistentFeatureExtension implements ReadAfterWriteConsistentFeatureExtension {
+		private final S3TransferManager s3TransferManager;
+
+		public S3ReadAfterWriteConsistentFeatureExtension(S3TransferManager s3TransferManager) {
+			this.s3TransferManager = s3TransferManager;
+		}
+
+		@Override
+		public boolean exists(RemoteFile remoteFile) throws StorageException {
+			try {
+				s3TransferManager.service.getObjectDetails(s3TransferManager.bucket.getName(), s3TransferManager.getRemoteFile(remoteFile));
+			}
+			catch (ServiceException e) {
+				if (e.getResponseCode() == 404) {
+					return false;
+				}
+				else {
+					throw new StorageException("Unable to verify if files exists", e);
+				}
+			}
+
+			return true;
 		}
 	}
 }

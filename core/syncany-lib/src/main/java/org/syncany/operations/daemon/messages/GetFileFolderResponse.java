@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,10 @@ public class GetFileFolderResponse extends FolderResponse {
 
 	@Element(required = true)
 	private String tempFileToken;	
+	
+	public GetFileFolderResponse() {
+		// Nothing
+	}
 	
 	public GetFileFolderResponse(int requestId, String root, String tempFileToken) {
 		super(200, requestId, null);

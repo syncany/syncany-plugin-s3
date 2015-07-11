@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,13 +39,14 @@ import org.syncany.plugins.Plugin;
 import org.syncany.plugins.UserInteractionListener;
 import org.syncany.util.ReflectionUtil;
 import org.syncany.util.StringUtil;
+
 import com.google.common.base.Objects;
 
 /**
  * A connection represents the configuration settings of a storage/connection
  * plugin. It is created through the concrete implementation of a {@link Plugin}.
- * <p/>
- * Options for a plugin specific {@link TransferSettings} can be defined using the
+ * 
+ * <p>Options for a plugin specific {@link TransferSettings} can be defined using the
  * {@link Element} annotation. Furthermore some Syncany-specific annotations are available.
  *
  * @author Philipp C. Heckel <philipp.heckel@gmail.com>
@@ -107,6 +108,7 @@ public abstract class TransferSettings {
 	 * @throws StorageException Thrown if the field either does not exist or isn't accessible or
 	 *         conversion failed due to invalid field types.
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public final void setField(String key, Object value) throws StorageException {
 		try {
 			Field[] elementFields = ReflectionUtil.getAllFieldsWithAnnotation(this.getClass(), Element.class);
@@ -121,7 +123,7 @@ public abstract class TransferSettings {
 					if (value == null) {
 						field.set(this, null);
 					}
-					else if (field.getType() == Integer.TYPE && (value instanceof Integer || value instanceof String)) {
+					else if (fieldType == Integer.TYPE && (value instanceof Integer || value instanceof String)) {
 						field.setInt(this, Integer.parseInt(String.valueOf(value)));
 					}
 					else if (fieldType == Boolean.TYPE && (value instanceof Boolean || value instanceof String)) {
@@ -133,6 +135,13 @@ public abstract class TransferSettings {
 					else if (fieldType == File.class && value instanceof String) {
 						field.set(this, new File(String.valueOf(value)));
 					}
+					else if (ReflectionUtil.getClassFromType(fieldType).isEnum() && value instanceof String) {						
+						Class<? extends Enum> enumClass = (Class<? extends Enum>) ReflectionUtil.getClassFromType(fieldType);
+						String enumValue = String.valueOf(value).toUpperCase();
+						
+						Enum translatedEnum = Enum.valueOf(enumClass, enumValue);						
+						field.set(this, translatedEnum);
+					}
 					else if (TransferSettings.class.isAssignableFrom(value.getClass())) {
 						field.set(this, ReflectionUtil.getClassFromType(fieldType).cast(value));
 					}
@@ -143,7 +152,7 @@ public abstract class TransferSettings {
 			}
 		}
 		catch (Exception e) {
-			throw new StorageException("Unable to parse value: " + e.getMessage(), e);
+			throw new StorageException("Unable to parse value because its format is invalid: " + e.getMessage(), e);
 		}
 	}
 
@@ -233,11 +242,12 @@ public abstract class TransferSettings {
 
 		for (Field field : ReflectionUtil.getAllFieldsWithAnnotation(this.getClass(), Element.class)) {
 			field.setAccessible(true);
-			
+
 			try {
 				toStringHelper.add(field.getName(), field.get(this));
 			}
 			catch (IllegalAccessException e) {
+				logger.log(Level.FINE, "Field is unaccessable", e);
 				toStringHelper.add(field.getName(), "**IllegalAccessException**");
 			}
 		}
@@ -248,14 +258,14 @@ public abstract class TransferSettings {
 	public static String decrypt(String encryptedHexString) throws CipherException {
 		byte[] encryptedBytes = StringUtil.fromHex(encryptedHexString);
 		byte[] decryptedBytes = CipherUtil.decrypt(new ByteArrayInputStream(encryptedBytes), UserConfig.getConfigEncryptionKey());
-		
+
 		return new String(decryptedBytes);
 	}
 
 	public static String encrypt(String decryptedPlainString) throws CipherException {
 		InputStream plaintextInputStream = IOUtils.toInputStream(decryptedPlainString);
 		byte[] encryptedBytes = CipherUtil.encrypt(plaintextInputStream, CipherSpecs.getDefaultCipherSpecs(), UserConfig.getConfigEncryptionKey());
-		
+
 		return StringUtil.toHex(encryptedBytes);
 	}
 }

@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com> 
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com> 
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,21 +26,20 @@ import org.syncany.operations.ChangeSet;
 import org.syncany.operations.OperationResult;
 import org.syncany.operations.daemon.messages.LsRemoteStartSyncExternalEvent;
 import org.syncany.operations.daemon.messages.StatusStartSyncExternalEvent;
+import org.syncany.operations.daemon.messages.UpIndexMidSyncExternalEvent;
 import org.syncany.operations.daemon.messages.UpIndexStartSyncExternalEvent;
 import org.syncany.operations.daemon.messages.UpStartSyncExternalEvent;
-import org.syncany.operations.daemon.messages.UpUploadFileInTransactionSyncExternalEvent;
-import org.syncany.operations.daemon.messages.UpUploadFileSyncExternalEvent;
 import org.syncany.operations.status.StatusOperationOptions;
+import org.syncany.operations.up.UpOperation;
 import org.syncany.operations.up.UpOperationOptions;
 import org.syncany.operations.up.UpOperationResult;
 import org.syncany.operations.up.UpOperationResult.UpResultCode;
-import org.syncany.util.FileUtil;
 
 import com.google.common.eventbus.Subscribe;
 
 public class UpCommand extends Command {
-	private long uploadedFileSize;
-
+	private int totalFileCount = -1;
+	
 	@Override
 	public CommandScope getRequiredCommandScope() {
 		return CommandScope.INITIALIZED_LOCALDIR;
@@ -54,7 +53,7 @@ public class UpCommand extends Command {
 	@Override
 	public int execute(String[] operationArgs) throws Exception {
 		UpOperationOptions operationOptions = parseOptions(operationArgs);
-		UpOperationResult operationResult = client.up(operationOptions);
+		UpOperationResult operationResult = new UpOperation(config, operationOptions).execute();
 
 		printResults(operationResult);
 
@@ -78,7 +77,7 @@ public class UpCommand extends Command {
 
 		// -F, --force-upload
 		operationOptions.setForceUploadEnabled(options.has(optionForceUpload));
-		
+
 		// -R, --no-resume
 		operationOptions.setResume(!options.has(optionNoResumeUpload));
 
@@ -138,25 +137,12 @@ public class UpCommand extends Command {
 
 	@Subscribe
 	public void onIndexStartEventReceived(UpIndexStartSyncExternalEvent syncEvent) {
-		out.printr("Indexing " + syncEvent.getFileCount() + " new or altered file(s)...");
+		totalFileCount = syncEvent.getFileCount();
+		out.printr("Indexing " + totalFileCount + " new or altered file(s)...");
 	}
 
 	@Subscribe
-	public void onUploadFileEventReceived(UpUploadFileSyncExternalEvent syncEvent) {
-		out.printr("Uploading " + syncEvent.getFilename() + " ...");
-	}
-
-	@Subscribe
-	public void onUploadFileInTransactionEventReceived(UpUploadFileInTransactionSyncExternalEvent syncEvent) {
-		if (syncEvent.getCurrentFileIndex() <= 1) {
-			uploadedFileSize = 0;
-		}
-
-		String currentFileSizeStr = FileUtil.formatFileSize(syncEvent.getCurrentFileSize());
-		int uploadedPercent = (int) Math.round((double) uploadedFileSize / syncEvent.getTotalFileSize() * 100);
-
-		out.printr("Uploading " + syncEvent.getCurrentFileIndex() + "/" + syncEvent.getTotalFileCount() + " (" + currentFileSizeStr + ", total "
-				+ uploadedPercent + "%) ...");
-		uploadedFileSize += syncEvent.getCurrentFileSize();
+	public void onIndexMidEventReceived(UpIndexMidSyncExternalEvent syncEvent) {
+		out.printr("Indexed " + syncEvent.getCurrentIndex() + "/" + syncEvent.getFileCount() + " file(s)...");
 	}
 }

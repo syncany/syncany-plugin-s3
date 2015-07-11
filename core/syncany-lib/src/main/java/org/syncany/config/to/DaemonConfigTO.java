@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2014 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,19 @@ import org.simpleframework.xml.Root;
 import org.simpleframework.xml.core.Persister;
 import org.syncany.config.ConfigException;
 
+/**
+ * This class is used to configure the daemon, in particular, its web server, 
+ * the managed folders and the web server / API users. 
+ * 
+ * <p>It uses the Simple framework for XML serialization, and its corresponding
+ * annotation-based configuration.
+ *
+ * @see WebServerTO
+ * @see FolderTO
+ * @see PortTO
+ * @see <a href="http://simple.sourceforge.net/">Simple framework</a>
+ * @author Philipp C. Heckel <philipp.heckel@gmail.com>
+ */
 @Root(name = "daemon", strict = false)
 public class DaemonConfigTO {
 	@Element(name = "webServer", required = false)
@@ -36,9 +49,6 @@ public class DaemonConfigTO {
 
 	@ElementList(name = "users", entry = "user", required = false)
 	private ArrayList<UserTO> users = new ArrayList<UserTO>();
-
-	@Element(name = "hooks", required = false)
-	private HooksTO hooks;
 
 	private PortTO portTO; // This is generated dynamically by the daemon. It should't be in the XML.
 
@@ -90,13 +100,5 @@ public class DaemonConfigTO {
 
 	public void setPortTO(PortTO portTO) {
 		this.portTO = portTO;
-	}
-
-	public HooksTO getHooks() {
-		return hooks;
-	}
-
-	public void setHooks(HooksTO hooks) {
-		this.hooks = hooks;
 	}
 }
