@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2016 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -315,7 +315,7 @@ public class ConnectOperation extends AbstractInitOperation {
 				throw new RuntimeException("Repository file is encrypted, but password cannot be queried (no listener).");
 			}
 
-			return listener.onUserPassword(null, "Password: ");
+			return listener.onUserPassword(null, "Master Password: ");
 		}
 		else {
 			return options.getPassword();

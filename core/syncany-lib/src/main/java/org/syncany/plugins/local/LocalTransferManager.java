@@ -1,6 +1,6 @@
 /*
  * Syncany, www.syncany.org
- * Copyright (C) 2011-2015 Philipp C. Heckel <philipp.heckel@gmail.com>
+ * Copyright (C) 2011-2016 Philipp C. Heckel <philipp.heckel@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -229,7 +229,7 @@ public class LocalTransferManager extends AbstractTransferManager {
 				}
 				catch (StorageException e) {
 					logger.log(Level.INFO, "Cannot create instance of " + remoteFileClass.getSimpleName() + " for file " + path
-									+ "; maybe invalid file name pattern. Ignoring file.", e);
+									+ "; maybe invalid file name pattern. Ignoring file.");
 				}
 			}
 		}
